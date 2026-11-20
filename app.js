@@ -6,6 +6,7 @@
   var APP_VER = 1;
   var LANG_KEY = "site-inspection-v3-lang";
   var BASEMAP_KEY = "site-inspection-v3-basemap";
+  var LAYOUT_KEY = "site-inspection-v3-layout";
   var TZ = "Asia/Hong_Kong";
   var MAX_EDGE = 2048;
   var THUMB_EDGE = 480;
@@ -312,6 +313,7 @@
   var state = {
     lang: "zh",
     basemap: "arcgis",
+    layoutPref: "auto",
     tab: "projects",
     filterRmo: "all",
     filterStatus: "all",
@@ -674,6 +676,26 @@
     else if (!window.isSecureContext) { el.textContent = t("insecureBanner"); el.hidden = false; }
     else el.hidden = true;
   }
+
+  function applyAdaptiveLayout() {
+    var w = window.innerWidth || document.documentElement.clientWidth || 1024;
+    var isPhone = state.layoutPref === "phone" || (state.layoutPref === "auto" && w < 768);
+    document.body.classList.toggle("layout-phone", isPhone);
+    document.body.classList.toggle("layout-ipad", !isPhone);
+    document.body.classList.toggle("is-forced-phone", state.layoutPref === "phone" && w >= 768);
+    var btn = $("btnLayoutMode");
+    if (btn) {
+      if (state.layoutPref === "auto") {
+        btn.textContent = isPhone ? (state.lang === "zh" ? "自動·電話" : "Auto·Phone") : (state.lang === "zh" ? "自動·iPad" : "Auto·iPad");
+      } else if (state.layoutPref === "phone") {
+        btn.textContent = state.lang === "zh" ? "電話版" : "Phone";
+      } else {
+        btn.textContent = state.lang === "zh" ? "iPad 版" : "iPad";
+      }
+    }
+    if (state.map) setTimeout(function () { if (state.map) state.map.invalidateSize(); }, 120);
+  }
+
   function updateConnBadge() {
     var el = $("connBadge");
     if (isFileProtocol()) { el.hidden = true; return; }
@@ -684,7 +706,7 @@
   function applyLang() {
     var p = I18N[state.lang];
     document.documentElement.lang = p.htmlLang;
-    document.title = p.title + " v3.1";
+    document.title = p.title + " v3.2";
     $("appTitle").textContent = p.title;
     $("appTagline").textContent = p.tagline;
     $("btnLang").textContent = p.langBtn;
@@ -766,6 +788,7 @@
     $("btnToggleBasemap").textContent = state.basemap === "arcgis" ? p.basemapArcgis : p.basemapOsm;
     updateBanner();
     updateConnBadge();
+    applyAdaptiveLayout();
     renderChecklistUi();
     updateElemGpsText();
   }
@@ -1677,6 +1700,12 @@
     $("btnReportPrintNow").addEventListener("click", function () { window.print(); });
     $("btnCloseLightbox").addEventListener("click", function () { $("lightbox").hidden = true; $("lightboxImg").removeAttribute("src"); });
     $("lightbox").addEventListener("click", function (e) { if (e.target === $("lightbox")) { $("lightbox").hidden = true; $("lightboxImg").removeAttribute("src"); } });
+    $("btnLayoutMode").addEventListener("click", function () {
+      state.layoutPref = state.layoutPref === "auto" ? "phone" : (state.layoutPref === "phone" ? "ipad" : "auto");
+      try { localStorage.setItem(LAYOUT_KEY, state.layoutPref); } catch (e) {}
+      applyAdaptiveLayout();
+    });
+    window.addEventListener("resize", applyAdaptiveLayout);
     window.addEventListener("online", updateConnBadge);
     window.addEventListener("offline", updateConnBadge);
   }
@@ -1685,6 +1714,7 @@
     try {
       var sl = localStorage.getItem(LANG_KEY); if (sl === "en" || sl === "zh") state.lang = sl;
       var sb = localStorage.getItem(BASEMAP_KEY); if (sb === "osm" || sb === "arcgis") state.basemap = sb;
+      var lp = localStorage.getItem(LAYOUT_KEY); if (lp === "auto" || lp === "phone" || lp === "ipad") state.layoutPref = lp;
     } catch (e) {}
     bind();
     applyLang();
