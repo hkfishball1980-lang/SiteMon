@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "地盤巡查 Site Inspection v2",
+  "name": "地盤巡查 Site Inspection v3",
   "short_name": "地盤巡查",
-  "description": "Offline iPad structural & site inspection (HD Appendix X). Data stays on this device.",
+  "description": "Offline iPad Estate Structural Inspection PWA (Project -> Elements -> HD Appendix X Report).",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

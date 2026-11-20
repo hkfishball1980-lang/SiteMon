@@ -1,11 +1,11 @@
-/* Site Inspection v2.0 — Offline iPad PWA with HD Structural Inspection Checklist (Appendix X) */
+/* Site Inspection v3.0 — Project (Estate) -> Multiple Structural Elements -> HD Appendix X Report */
 (function () {
   "use strict";
 
-  var APP_DB = "site-inspection-v1";
+  var APP_DB = "site-inspection-v3";
   var APP_VER = 1;
-  var LANG_KEY = "site-inspection-v2-lang";
-  var BASEMAP_KEY = "site-inspection-v2-basemap";
+  var LANG_KEY = "site-inspection-v3-lang";
+  var BASEMAP_KEY = "site-inspection-v3-basemap";
   var TZ = "Asia/Hong_Kong";
   var MAX_EDGE = 2048;
   var THUMB_EDGE = 480;
@@ -53,222 +53,249 @@
   ];
 
   var ALL_ITEMS = [];
-  CHECKLIST_SCHEMA.forEach(function (sec) {
-    sec.items.forEach(function (it) { ALL_ITEMS.push(it); });
-  });
-
+  CHECKLIST_SCHEMA.forEach(function (sec) { sec.items.forEach(function (it) { ALL_ITEMS.push(it); }); });
   var RATINGS = ["1", "2", "3", "4", "5", "N.A."];
 
   var I18N = {
     zh: {
       htmlLang: "zh-HK",
       title: "地盤巡查",
-      tagline: "離線 iPad 結構巡查（HD Appendix X）· 資料只存本機",
+      tagline: "屋邨專案 → 多項 Structural Elements → Appendix X 巡查報告",
       langBtn: "EN",
-      tabRecords: "紀錄",
-      tabEdit: "新增",
-      tabEditOpen: "編輯",
+      tabProjects: "屋邨專案",
+      tabProjectDetail: "構建物列表",
+      tabElement: "構建物巡查",
       tabAlbum: "相簿",
       tabMap: "地圖",
-      tabExport: "匯出",
-      search: "搜尋屋邨、DMO、構建物、備註或現況",
-      newRecord: "新增巡查",
+      tabExport: "匯出備份",
+      searchProj: "搜尋屋邨、DMO、SE 或日期",
+      newProject: "+ 新增屋邨專案",
+      emptyProjects: "未有屋邨巡查專案。撳「+ 新增屋邨專案」開一條村開始巡查。",
+      backProjects: "← 返回專案列表",
+      backProject: "← 返回構建物列表",
+      editProject: "編輯專案資料",
+      addElement: "+ 新增 Structural Element",
+      projectReport: "生成整份屋邨巡查報告 (PDF)",
+      projectZip: "匯出此專案 ZIP",
+      deleteProject: "刪除專案",
+      searchElem: "搜尋構建物名稱、位置或 Remarks",
       fltAll: "全部",
       fltSse: "需 SSE 關注 (4–5)",
       fltFollowup: "跟進中",
       fltNormal: "正常",
-      emptyRecords: "未有符合條件嘅巡查紀錄。撳「新增巡查」開始。",
-      emptyAlbum: "未有相片。喺紀錄入面影相或選相後，會喺呢度出現。",
-      secHeaderTitle: "基本資料（HD Appendix X）",
-      secChecklistTitle: "結構巡查評級 Checklist（1 良好 – 5 嚴重 / N.A.）",
-      secRemarksTitle: "5.1 備註、補充說明及簽署",
-      printReport: "列印 Appendix X 報告",
-      when: "巡查日期時間（自動）",
-      dmo: "DMO",
-      site: "屋邨／地盤名稱 (Estate) *",
-      structure: "巡查構建物 (Inspected Structure)",
-      handover: "移交日期 (Handover Date)",
-      status: "巡查狀態",
+      emptyElements: "呢個屋邨專案暫時未有 Structural Element。撳「+ 新增 Structural Element」開始逐項巡查。",
+      projModalNew: "新增屋邨巡查專案（Project）",
+      projModalEdit: "編輯屋邨專案資料",
+      projDmo: "DMO",
+      projEstate: "屋邨名稱 (Estate) *",
+      projDate: "巡查日期 (Inspection Date) *",
+      projHandover: "移交日期 (Handover Date)",
+      projSe: "Reported by SE（姓名／職位）",
+      projSse: "Endorsed by SSE（姓名／職位）",
+      projNotes: "專案總備註（可選）",
+      secElemHeader: "構建物資料（Structural Element）",
+      elemReport: "列印此項 Appendix X",
+      elemName: "構建物類型／名稱 (Inspected Structure) *",
+      elemLoc: "具體位置／座數（例如 Block 1 入口）",
+      elemStatus: "巡查狀態",
+      elemWhen: "巡查時間（自動）",
       statusNormal: "正常 (Normal)",
       statusFollowup: "跟進中 (Follow-up)",
       statusSse: "需 SSE 關注 (Rating 4–5)",
-      recGps: "紀錄定位：",
+      elemGps: "此構建物定位：",
       refreshGps: "更新 GPS",
       pickMapLoc: "地圖點選補位",
       gpsLoading: "定位中…",
+      secChecklistTitle: "HD Appendix X 結構評級（1 良好 – 5 嚴重 / N.A.）",
       fillNa: "未填項設為 N.A.",
       clearRatings: "清除評級",
-      checklistHint: "評級：1–3 一般至可接受；4 = Poor（差）；5 = Severe（嚴重）。如任何項目選 4 或 5，請於 5.1 Remarks 詳述並提請 SSE 關注。",
-      sseAlert: "⚠️ 偵測到評級 4 (Poor) 或 5 (Severe)：請務必喺下方「5.1 Remarks」詳細說明結構狀況，並提請 SSE 關注。",
+      checklistHint: "評級 1–3 一般至可接受；4 = Poor；5 = Severe。如任何項目為 4 或 5，請於 5.1 Remarks 詳述並提請 SSE 關注。",
+      sseAlert: "⚠️ 偵測到評級 4 (Poor) 或 5 (Severe)：請喺下方「5.1 Remarks」詳細說明結構狀況並提請 SSE 關注。",
       othersPlaceholder: "請輸入 4.3 其他巡查項目名稱…",
+      secRemarksTitle: "5.1 Remarks 及補充說明",
       remarks: "5.1 Remarks（結構狀況詳述／SSE 關注事項）",
       condition: "現場現況補充（可選）",
       works: "External works 說明（可選）",
-      seName: "Reported by SE（姓名／職位）",
-      sseName: "Endorsed by SSE（姓名／職位）",
-      photos: "巡查相片",
+      photos: "此構建物巡查相片",
       takePhoto: "影相",
       pickPhoto: "從相簿選取",
-      photoHint: "開啟新紀錄時已自動預熱 GPS；相片會自動讀取 EXIF 或裝置定位（無訊號亦可用紀錄定位兜底），每張相片下方可直接輸入備註。",
+      photoHint: "相片只歸屬呢個 Structural Element，支援自動定位及每張相獨立備註，生成報告時會跟返所屬構建物排版。",
       photoNotePlaceholder: "輸入相片備註…",
-      save: "儲存紀錄",
-      exportSingle: "匯出此紀錄 ZIP",
+      saveElem: "儲存此構建物",
+      save: "儲存",
       cancel: "取消",
-      delete: "刪除紀錄",
+      deleteElem: "刪除此構建物",
       confirmOk: "確定",
-      confirmDelete: "確定刪除呢條紀錄同佢嘅相片？此操作唔可以還原。",
-      confirmClear: "確定清除呢部裝置上所有巡查紀錄同相片？此操作唔可以還原。",
-      draftCancel: "取消後會放棄今次未儲存嘅新紀錄同相片。確定？",
-      sseRemarksConfirm: "呢條紀錄有評級 4 或 5 項目，但「5.1 Remarks」仲係空白。確定照樣儲存？",
-      saved: "已儲存紀錄",
-      deleted: "已刪除紀錄",
-      cancelled: "已取消",
+      confirmDelProj: "確定刪除成個屋邨專案，連同入面所有 Structural Elements 同相片？此操作無法還原。",
+      confirmDelElem: "確定刪除此 Structural Element 同佢所有相片？此操作無法還原。",
+      confirmClear: "確定清除呢部裝置上所有專案、構建物同相片？",
+      sseRemarksConfirm: "此構建物有評級 4 或 5 項目，但「5.1 Remarks」仲係空白。確定照樣儲存？",
+      saved: "已儲存",
+      deleted: "已刪除",
       noCoords: "無坐標",
       hasCoords: "有坐標",
+      elemCount: "項構建物",
       photosCount: "張相",
-      exportTitle: "匯出與備份還原",
-      exportBlurb: "在本機產生 ZIP（含 Appendix X 完整 Excel、CSV、JSON 備份檔及相片）。可按日期篩選匯出，避免相片過多。",
-      dateFrom: "開始日期（可選）",
-      dateTo: "結束日期（可選）",
-      exportBtn: "匯出 ZIP",
+      allProjects: "全部屋邨專案",
+      emptyAlbum: "未有巡查相片。",
+      mapHintOnline: "線上地圖模式。標記來自各構建物及相片坐標。",
+      mapHintOffline: "離線模式：顯示坐標清單同簡易相對位置圖。",
+      mapEmpty: "未有帶坐標嘅構建物或相片。",
+      basemapArcgis: "底圖：街道圖（按此切衛星圖）",
+      basemapOsm: "底圖：衛星圖（按此切街道圖）",
+      exportTitle: "匯出 ZIP 與備份還原",
+      exportBlurb: "可揀單一屋邨專案或全部專案匯出 ZIP（包含 Excel 總表、CSV、JSON 備份及按構建物命名嘅相片）。",
+      lblExportProj: "選擇匯出範圍",
+      exportZipBtn: "匯出 ZIP",
       importBtn: "匯入 JSON 備份還原",
-      importDone: "備份還原完成：",
-      importFail: "無法讀取備份檔，請確認係本 App 匯出嘅 backup.json。",
-      exportEmpty: "所選範圍內未有紀錄可以匯出。",
-      exportDone: "已開始下載 ZIP 匯出檔。",
+      importDone: "還原完成！匯入專案數：",
+      importFail: "無法讀取備份檔，請確認係 v3 匯出嘅 backup.json。",
+      exportEmpty: "所選範圍未有任何紀錄。",
+      exportDone: "已開始下載 ZIP。",
       exportFail: "匯出失敗。",
-      exporting: "正在打包匯出…",
-      privacyTitle: "私隱同儲存空間",
-      privacyBlurb: "所有巡查資料同相片只存放於本機瀏覽器 IndexedDB，唔會上傳任何伺服器。建議定期匯出 ZIP 備份。",
+      exporting: "正在打包 ZIP…",
+      privacyTitle: "私隱同儲存",
+      privacyBlurb: "所有屋邨專案、構建物評級同相片均存放於本機 IndexedDB，唔會上傳伺服器。",
       clearAll: "清除全部資料",
       cleared: "已清除全部資料",
       storage: "儲存用量",
       storageUnknown: "瀏覽器未提供用量數字。",
-      fileBanner: "目前為本機檔（file://）模式。建議部署到 GitHub Pages（HTTPS）並以 iPad Safari 開啟，以啟用相機、GPS 及離線快取。",
-      insecureBanner: "目前頁面並非 HTTPS，相機、GPS 與離線安裝可能受限。",
+      fileBanner: "目前為 file:// 模式，建議部署到 HTTPS 網站並用 iPad Safari 開啟。",
+      insecureBanner: "目前並非 HTTPS，相機、GPS 與離線安裝可能受限。",
       offline: "離線",
       online: "已連線",
-      mapHintOnline: "線上地圖模式。標記來自巡查相片及紀錄坐標。",
-      mapHintOffline: "目前離線，顯示坐標清單同簡易相對位置圖。",
-      mapEmpty: "未有帶坐標嘅紀錄或相片。",
-      basemapArcgis: "底圖：街道圖（按此切衛星圖）",
-      basemapOsm: "底圖：衛星圖（按此切街道圖）",
+      needEstate: "請填寫屋邨名稱。",
+      needElemName: "請填寫構建物名稱。",
+      gpsPhoto: "已儲存相片（附坐標）",
       noGpsPhoto: "已儲存相片（無坐標）",
-      gpsPhoto: "已儲存相片（已附坐標）",
-      photoFail: "無法處理呢張相片。",
-      needSite: "請填寫屋邨／地盤名稱。",
-      lightboxClose: "關閉",
+      photoFail: "無法處理相片。",
       pickerTitle: "地圖點選補錄坐標",
-      pickerHint: "點擊地圖任何位置放置標記，再按「套用坐標」。",
+      pickerHint: "點擊地圖放置標記，再撳「套用坐標」。",
       pickerApply: "套用坐標",
-      reportModalTitle: "HD Appendix X 結構巡查摘要報告預覽",
+      reportModalTitle: "結構巡查報告預覽（可列印／存為 PDF）",
       reportPrintNow: "列印／存為 PDF",
+      close: "關閉",
       simplePlot: "簡易相對位置圖",
       maxRate: "最高評級"
     },
     en: {
       htmlLang: "en",
       title: "Site Inspection",
-      tagline: "Offline iPad Structural Inspection (HD Appendix X) · Local Only",
+      tagline: "Estate Project → Multiple Structural Elements → Appendix X Report",
       langBtn: "中文",
-      tabRecords: "Records",
-      tabEdit: "New",
-      tabEditOpen: "Edit",
+      tabProjects: "Projects",
+      tabProjectDetail: "Elements",
+      tabElement: "Inspect Element",
       tabAlbum: "Album",
       tabMap: "Map",
       tabExport: "Export",
-      search: "Search estate, DMO, structure, remarks, or condition",
-      newRecord: "New Inspection",
+      searchProj: "Search estate, DMO, SE, or date",
+      newProject: "+ New Estate Project",
+      emptyProjects: "No estate projects yet. Tap “+ New Estate Project” to start today's inspection.",
+      backProjects: "← All Projects",
+      backProject: "← Back to Elements",
+      editProject: "Edit Project",
+      addElement: "+ Add Structural Element",
+      projectReport: "Full Estate Inspection Report (PDF)",
+      projectZip: "Export Project ZIP",
+      deleteProject: "Delete Project",
+      searchElem: "Search element name, location, or remarks",
       fltAll: "All",
       fltSse: "SSE Attention (4–5)",
       fltFollowup: "Follow-up",
       fltNormal: "Normal",
-      emptyRecords: "No matching inspection records. Tap “New Inspection” to start.",
-      emptyAlbum: "No photos yet. Photos added to records appear here.",
-      secHeaderTitle: "Inspection Header (HD Appendix X)",
-      secChecklistTitle: "Structural Inspection Checklist (1 Good – 5 Severe / N.A.)",
-      secRemarksTitle: "5.1 Remarks, Notes & Sign-off",
-      printReport: "Print Appendix X Report",
-      when: "Inspection Date & Time (Auto)",
-      dmo: "DMO",
-      site: "Estate / Site Name *",
-      structure: "Inspected Structure",
-      handover: "Handover Date (mm/yyyy)",
-      status: "Status",
+      emptyElements: "No structural elements in this project yet. Tap “+ Add Structural Element” to begin.",
+      projModalNew: "New Estate Inspection Project",
+      projModalEdit: "Edit Estate Project",
+      projDmo: "DMO",
+      projEstate: "Estate Name *",
+      projDate: "Inspection Date *",
+      projHandover: "Handover Date (mm/yyyy)",
+      projSe: "Reported by SE (Name / Post)",
+      projSse: "Endorsed by SSE (Name / Post)",
+      projNotes: "Project Notes (Optional)",
+      secElemHeader: "Structural Element Details",
+      elemReport: "Print Single Appendix X",
+      elemName: "Inspected Structure / Element *",
+      elemLoc: "Specific Location / Block (e.g. Block 1 Entrance)",
+      elemStatus: "Status",
+      elemWhen: "Inspected At (Auto)",
       statusNormal: "Normal",
       statusFollowup: "Follow-up",
       statusSse: "SSE Attention (Rating 4–5)",
-      recGps: "Record Location:",
+      elemGps: "Element Location:",
       refreshGps: "Refresh GPS",
       pickMapLoc: "Pick on Map",
       gpsLoading: "Locating…",
+      secChecklistTitle: "HD Appendix X Checklist (1 Good – 5 Severe / N.A.)",
       fillNa: "Set Empty to N.A.",
       clearRatings: "Clear Ratings",
-      checklistHint: "Ratings: 1–3 Acceptable; 4 = Poor; 5 = Severe. For ratings 4 or 5, elaborate in 5.1 Remarks and draw SSE's attention.",
-      sseAlert: "⚠️ Rating 4 (Poor) or 5 (Severe) detected: Please elaborate structural conditions in 5.1 Remarks and draw SSE's attention.",
+      checklistHint: "Ratings 1–3 Acceptable; 4 = Poor; 5 = Severe. For ratings 4 or 5, elaborate in 5.1 Remarks and draw SSE's attention.",
+      sseAlert: "⚠️ Rating 4 (Poor) or 5 (Severe) detected: Elaborate structural conditions in 5.1 Remarks and draw SSE's attention.",
       othersPlaceholder: "Specify 4.3 Others item…",
+      secRemarksTitle: "5.1 Remarks & Notes",
       remarks: "5.1 Remarks (Elaboration / SSE Attention)",
       condition: "Current Condition (Optional)",
       works: "External Works Description (Optional)",
-      seName: "Reported by SE (Name / Post)",
-      sseName: "Endorsed by SSE (Name / Post)",
-      photos: "Inspection Photos",
+      photos: "Element Inspection Photos",
       takePhoto: "Take Photo",
       pickPhoto: "Choose from Library",
-      photoHint: "GPS pre-warms automatically when creating a record. Photos use EXIF, device GPS, or record location fallback. Add captions below each photo.",
+      photoHint: "Photos belong specifically to this Structural Element, with GPS and individual captions included in the report.",
       photoNotePlaceholder: "Add photo caption…",
-      save: "Save Record",
-      exportSingle: "Export This Record ZIP",
+      saveElem: "Save Element",
+      save: "Save",
       cancel: "Cancel",
-      delete: "Delete Record",
+      deleteElem: "Delete Element",
       confirmOk: "Confirm",
-      confirmDelete: "Delete this record and its photos? This cannot be undone.",
-      confirmClear: "Clear all inspection records and photos on this device? This cannot be undone.",
-      draftCancel: "Discard this unsaved inspection record and its photos?",
-      sseRemarksConfirm: "This record has rating 4 or 5 items, but 5.1 Remarks is empty. Save anyway?",
-      saved: "Record saved",
-      deleted: "Record deleted",
-      cancelled: "Cancelled",
+      confirmDelProj: "Delete this entire Estate Project along with all its Structural Elements and photos? Cannot be undone.",
+      confirmDelElem: "Delete this Structural Element and its photos? Cannot be undone.",
+      confirmClear: "Clear all projects, elements, and photos on this device?",
+      sseRemarksConfirm: "This element has rating 4 or 5 items, but 5.1 Remarks is empty. Save anyway?",
+      saved: "Saved",
+      deleted: "Deleted",
       noCoords: "No coordinates",
       hasCoords: "Geotagged",
+      elemCount: "elements",
       photosCount: "photos",
-      exportTitle: "Export & Backup Restore",
-      exportBlurb: "Generates a local ZIP with Appendix X Excel, CSV, JSON backup, and photos. Filter by date range if needed.",
-      dateFrom: "From Date (Optional)",
-      dateTo: "To Date (Optional)",
-      exportBtn: "Export ZIP",
+      allProjects: "All Estate Projects",
+      emptyAlbum: "No inspection photos yet.",
+      mapHintOnline: "Online map showing geotagged elements and photos.",
+      mapHintOffline: "Offline mode: showing coordinate list and relative plot.",
+      mapEmpty: "No geotagged elements or photos yet.",
+      basemapArcgis: "Basemap: Street (Switch to Satellite)",
+      basemapOsm: "Basemap: Satellite (Switch to Street)",
+      exportTitle: "Export ZIP & Backup Restore",
+      exportBlurb: "Export a single Estate Project or all projects as ZIP (Excel summary, CSVs, JSON backup, and photos organized by element).",
+      lblExportProj: "Export Scope",
+      exportZipBtn: "Export ZIP",
       importBtn: "Restore JSON Backup",
-      importDone: "Backup restored: ",
-      importFail: "Could not parse backup file. Please choose a backup.json exported by this app.",
-      exportEmpty: "No records match the selected date range.",
-      exportDone: "ZIP export download started.",
+      importDone: "Restored projects: ",
+      importFail: "Could not read backup file. Please choose a v3 backup.json.",
+      exportEmpty: "No data in selected scope.",
+      exportDone: "ZIP download started.",
       exportFail: "Export failed.",
       exporting: "Packaging ZIP…",
       privacyTitle: "Privacy & Storage",
-      privacyBlurb: "All records and photos stay in local browser IndexedDB storage. Export ZIP backups regularly.",
+      privacyBlurb: "All projects, elements, and photos stay locally in IndexedDB.",
       clearAll: "Clear All Data",
       cleared: "All data cleared",
       storage: "Storage used",
-      storageUnknown: "Browser did not report storage usage.",
-      fileBanner: "Opened via file://. Deploy to GitHub Pages (HTTPS) and open in iPad Safari for camera, GPS, and offline PWA.",
-      insecureBanner: "Not served over HTTPS. Camera, GPS, and offline install may be limited.",
+      storageUnknown: "Storage usage unavailable.",
+      fileBanner: "Opened as file://. Deploy to HTTPS and open in iPad Safari for full PWA features.",
+      insecureBanner: "Not HTTPS. Camera, GPS, and offline install may be limited.",
       offline: "Offline",
       online: "Online",
-      mapHintOnline: "Online map. Markers come from inspection photos and record locations.",
-      mapHintOffline: "Offline mode: showing coordinate list and simple relative plot.",
-      mapEmpty: "No geotagged records or photos yet.",
-      basemapArcgis: "Basemap: Street (Switch to Satellite)",
-      basemapOsm: "Basemap: Satellite (Switch to Street)",
-      noGpsPhoto: "Photo saved (no coordinates)",
+      needEstate: "Please enter Estate Name.",
+      needElemName: "Please enter Structural Element name.",
       gpsPhoto: "Photo saved (geotagged)",
-      photoFail: "Could not process this photo.",
-      needSite: "Please enter Estate / Site Name.",
-      lightboxClose: "Close",
+      noGpsPhoto: "Photo saved (no coordinates)",
+      photoFail: "Could not process photo.",
       pickerTitle: "Pick Location on Map",
-      pickerHint: "Tap anywhere on the map to place a pin, then tap Apply.",
+      pickerHint: "Tap on the map to place a pin, then tap Apply.",
       pickerApply: "Apply Location",
-      reportModalTitle: "HD Appendix X Structural Inspection Summary",
+      reportModalTitle: "Inspection Report Preview (Print / Save PDF)",
       reportPrintNow: "Print / Save PDF",
+      close: "Close",
       simplePlot: "Simple Relative Plot",
       maxRate: "Max Rating"
     }
@@ -277,12 +304,14 @@
   var state = {
     lang: "zh",
     basemap: "arcgis",
-    tab: "records",
+    tab: "projects",
     filterStatus: "all",
-    records: [],
-    photosByRecord: {},
-    currentId: null,
-    isNewUnsaved: false,
+    projects: [],
+    elements: [],
+    photos: [],
+    currentProjectId: null,
+    currentElementId: null,
+    isNewElementUnsaved: false,
     currentRatings: {},
     currentOthersText: "",
     currentGps: null,
@@ -291,13 +320,11 @@
     pickerMap: null,
     pickerMarker: null,
     pickerLatLng: null,
-    objectUrls: [],
-    savingPhoto: false
+    objectUrls: []
   };
 
   function $(id) { return document.getElementById(id); }
   function t(key) { return (I18N[state.lang] || I18N.zh)[key] || key; }
-
   function uid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -305,73 +332,45 @@
       return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
     });
   }
-
-  function showConfirm(msg) {
-    return new Promise(function (resolve) {
-      var overlay = $("confirmModal");
-      $("confirmMsg").textContent = msg;
-      $("btnConfirmOk").textContent = t("confirmOk");
-      $("btnConfirmCancel").textContent = t("cancel");
-      overlay.hidden = false;
-      function done(val) {
-        overlay.hidden = true;
-        $("btnConfirmOk").removeEventListener("click", onOk);
-        $("btnConfirmCancel").removeEventListener("click", onCancel);
-        resolve(val);
-      }
-      function onOk() { done(true); }
-      function onCancel() { done(false); }
-      $("btnConfirmOk").addEventListener("click", onOk);
-      $("btnConfirmCancel").addEventListener("click", onCancel);
-    });
+  function xmlEsc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
-
+  function slug(s) {
+    return (String(s || "").trim().replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_") || "item").slice(0, 36);
+  }
   function hktParts(date) {
     var fmt = new Intl.DateTimeFormat("en-GB", {
       timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
       hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false
     });
-    var map = {};
-    fmt.formatToParts(date).forEach(function (p) { if (p.type !== "literal") map[p.type] = p.value; });
-    return map;
+    var m = {};
+    fmt.formatToParts(date).forEach(function (p) { if (p.type !== "literal") m[p.type] = p.value; });
+    return m;
   }
-
+  function todayYmd() {
+    var p = hktParts(new Date());
+    return p.year + "-" + p.month + "-" + p.day;
+  }
   function fmtHkt(iso) {
     if (!iso) return "";
     var p = hktParts(new Date(iso));
     return p.year + "-" + p.month + "-" + p.day + " " + p.hour + ":" + p.minute;
   }
-
-  function fmtDateShort(iso) {
-    if (!iso) return "";
-    var p = hktParts(new Date(iso));
-    return p.day + "/" + p.month + "/" + p.year;
+  function fmtDateDisplay(ymd) {
+    if (!ymd) return "";
+    var parts = String(ymd).split("-");
+    return parts.length === 3 ? parts[2] + "/" + parts[1] + "/" + parts[0] : ymd;
   }
-
-  function fmtDateYmd(iso) {
-    if (!iso) return "";
-    var p = hktParts(new Date(iso));
-    return p.year + "-" + p.month + "-" + p.day;
-  }
-
   function stampHkt(iso) {
     var p = hktParts(iso ? new Date(iso) : new Date());
     return p.year + p.month + p.day + "-" + p.hour + p.minute + p.second;
   }
-
-  function slug(s) {
-    return (String(s || "").trim().replace(/[\\/:*?"<>|]+/g, "_").replace(/\s+/g, "_") || "site").slice(0, 40);
-  }
-
   function hasCoords(obj) {
     return !!(obj && typeof obj.lat === "number" && typeof obj.lng === "number" && isFinite(obj.lat) && isFinite(obj.lng));
   }
-
   function fmtCoord(lat, lng) {
-    if (!hasCoords({ lat: lat, lng: lng })) return t("noCoords");
-    return lat.toFixed(6) + ", " + lng.toFixed(6);
+    return hasCoords({ lat: lat, lng: lng }) ? lat.toFixed(6) + ", " + lng.toFixed(6) : t("noCoords");
   }
-
   function maxRatingOf(ratings) {
     var max = 0;
     Object.keys(ratings || {}).forEach(function (k) {
@@ -380,295 +379,30 @@
     });
     return max;
   }
+  function hasSevereRating(ratings) { return maxRatingOf(ratings) >= 4; }
+  function elemStatusOf(el) { return el.status || (hasSevereRating(el.ratings) ? "sse" : "normal"); }
 
-  function hasSevereRating(ratings) {
-    return maxRatingOf(ratings) >= 4;
-  }
-
-  /* ---------- IndexedDB with in-memory fallback ---------- */
-  var dbPromise = null;
-  var memStore = { records: {}, photos: {} };
-  var useMem = false;
-
-  function openDb() {
-    if (useMem) return Promise.resolve(null);
-    if (dbPromise) return dbPromise;
-    dbPromise = new Promise(function (resolve) {
-      if (!window.indexedDB) { useMem = true; resolve(null); return; }
-      try {
-        var req = indexedDB.open(APP_DB, APP_VER);
-        req.onupgradeneeded = function () {
-          var db = req.result;
-          if (!db.objectStoreNames.contains("records")) db.createObjectStore("records", { keyPath: "id" });
-          if (!db.objectStoreNames.contains("photos")) {
-            var ps = db.createObjectStore("photos", { keyPath: "id" });
-            ps.createIndex("byRecord", "recordId", { unique: false });
-          }
-        };
-        req.onsuccess = function () { resolve(req.result); };
-        req.onerror = function () { useMem = true; resolve(null); };
-      } catch (e) { useMem = true; resolve(null); }
-    });
-    return dbPromise;
-  }
-
-  function txDone(tx) {
-    return new Promise(function (res, rej) {
-      tx.oncomplete = function () { res(); };
-      tx.onerror = function () { rej(tx.error); };
-      tx.onabort = function () { rej(tx.error || new Error("aborted")); };
-    });
-  }
-  function reqDone(req) {
-    return new Promise(function (res, rej) {
-      req.onsuccess = function () { res(req.result); };
-      req.onerror = function () { rej(req.error); };
-    });
-  }
-
-  async function getAllRecords() {
-    var db = await openDb();
-    if (!db) return Object.values(memStore.records);
-    return reqDone(db.transaction("records").objectStore("records").getAll());
-  }
-  async function getAllPhotos() {
-    var db = await openDb();
-    if (!db) return Object.values(memStore.photos);
-    return reqDone(db.transaction("photos").objectStore("photos").getAll());
-  }
-  async function getRecord(id) {
-    var db = await openDb();
-    if (!db) return memStore.records[id] || null;
-    return reqDone(db.transaction("records").objectStore("records").get(id));
-  }
-  async function putRecord(rec) {
-    var db = await openDb();
-    if (!db) { memStore.records[rec.id] = rec; return; }
-    var tx = db.transaction("records", "readwrite");
-    tx.objectStore("records").put(rec);
-    await txDone(tx);
-  }
-  async function putPhoto(photo) {
-    var db = await openDb();
-    if (!db) { memStore.photos[photo.id] = photo; return; }
-    var tx = db.transaction("photos", "readwrite");
-    tx.objectStore("photos").put(photo);
-    await txDone(tx);
-  }
-  async function photosFor(recordId) {
-    var db = await openDb();
-    if (!db) return Object.values(memStore.photos).filter(function (p) { return p.recordId === recordId; });
-    return reqDone(db.transaction("photos").objectStore("photos").index("byRecord").getAll(recordId));
-  }
-  async function deletePhoto(id) {
-    var db = await openDb();
-    if (!db) { delete memStore.photos[id]; return; }
-    var tx = db.transaction("photos", "readwrite");
-    tx.objectStore("photos").delete(id);
-    await txDone(tx);
-  }
-  async function deleteRecordAndPhotos(id) {
-    var list = await photosFor(id);
-    var db = await openDb();
-    if (!db) {
-      delete memStore.records[id];
-      list.forEach(function (p) { delete memStore.photos[p.id]; });
-      return;
-    }
-    var tx = db.transaction(["records", "photos"], "readwrite");
-    tx.objectStore("records").delete(id);
-    list.forEach(function (p) { tx.objectStore("photos").delete(p.id); });
-    await txDone(tx);
-  }
-  async function clearAllData() {
-    var db = await openDb();
-    if (!db) { memStore.records = {}; memStore.photos = {}; return; }
-    var tx = db.transaction(["records", "photos"], "readwrite");
-    tx.objectStore("records").clear();
-    tx.objectStore("photos").clear();
-    await txDone(tx);
-  }
-
-  /* ---------- GPS & EXIF ---------- */
-  function getDeviceGps() {
+  function showConfirm(msg) {
     return new Promise(function (resolve) {
-      if (!navigator.geolocation) { resolve(null); return; }
-      var done = false;
-      var timer = setTimeout(function () { if (!done) { done = true; resolve(null); } }, 8500);
-      try {
-        navigator.geolocation.getCurrentPosition(
-          function (pos) {
-            if (done) return;
-            done = true; clearTimeout(timer);
-            resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, source: "device" });
-          },
-          function () { if (!done) { done = true; clearTimeout(timer); resolve(null); } },
-          { enableHighAccuracy: true, timeout: 8000, maximumAge: 20000 }
-        );
-      } catch (e) { clearTimeout(timer); resolve(null); }
+      $("confirmMsg").textContent = msg;
+      $("btnConfirmOk").textContent = t("confirmOk");
+      $("btnConfirmCancel").textContent = t("cancel");
+      $("confirmModal").hidden = false;
+      function done(v) {
+        $("confirmModal").hidden = true;
+        $("btnConfirmOk").removeEventListener("click", ok);
+        $("btnConfirmCancel").removeEventListener("click", no);
+        resolve(v);
+      }
+      function ok() { done(true); }
+      function no() { done(false); }
+      $("btnConfirmOk").addEventListener("click", ok);
+      $("btnConfirmCancel").addEventListener("click", no);
     });
   }
-
-  function getAscii(view, offset, len) {
-    var s = "";
-    for (var i = 0; i < len; i++) s += String.fromCharCode(view.getUint8(offset + i));
-    return s;
-  }
-  function readRational(view, offset, le) {
-    var num = view.getUint32(offset, le), den = view.getUint32(offset + 4, le);
-    return den ? num / den : 0;
-  }
-  function findTagOffset(view, ifd, tiffStart, le, tag) {
-    if (ifd + 2 > view.byteLength) return null;
-    var n = view.getUint16(ifd, le);
-    for (var i = 0; i < n; i++) {
-      var entry = ifd + 2 + i * 12;
-      if (entry + 12 > view.byteLength) break;
-      if (view.getUint16(entry, le) === tag) return view.getUint32(entry + 8, le);
-    }
-    return null;
-  }
-  function findTagValue(view, ifd, tiffStart, le, tag, kind) {
-    if (ifd + 2 > view.byteLength) return null;
-    var n = view.getUint16(ifd, le);
-    for (var i = 0; i < n; i++) {
-      var entry = ifd + 2 + i * 12;
-      if (entry + 12 > view.byteLength) break;
-      if (view.getUint16(entry, le) !== tag) continue;
-      var count = view.getUint32(entry + 4, le);
-      var valueOff = entry + 8;
-      if (kind === "ascii") {
-        var bytes = count > 4 ? tiffStart + view.getUint32(valueOff, le) : valueOff;
-        var s = "";
-        for (var c = 0; c < count && bytes + c < view.byteLength; c++) {
-          var ch = view.getUint8(bytes + c);
-          if (ch === 0) break;
-          s += String.fromCharCode(ch);
-        }
-        return s;
-      }
-      if (kind === "rational3") {
-        var start = tiffStart + view.getUint32(valueOff, le);
-        if (start + 24 > view.byteLength) return null;
-        return readRational(view, start, le) + readRational(view, start + 8, le) / 60 + readRational(view, start + 16, le) / 3600;
-      }
-    }
-    return null;
-  }
-  function readGpsFromExif(buffer) {
-    try {
-      var view = new DataView(buffer);
-      if (view.byteLength < 12 || view.getUint16(0, false) !== 0xffd8) return null;
-      var offset = 2;
-      while (offset + 4 < view.byteLength) {
-        if (view.getUint8(offset) !== 0xff) break;
-        var marker = view.getUint8(offset + 1);
-        var size = view.getUint16(offset + 2, false);
-        if (marker === 0xe1) {
-          var start = offset + 4;
-          if (start + 6 < view.byteLength && getAscii(view, start, 4) === "Exif") {
-            var tiffStart = start + 6;
-            var endian = view.getUint16(tiffStart, false);
-            var le = endian === 0x4949 ? true : (endian === 0x4d4d ? false : null);
-            if (le === null || view.getUint16(tiffStart + 2, le) !== 0x002a) return null;
-            var ifd0 = tiffStart + view.getUint32(tiffStart + 4, le);
-            var gpsOffset = findTagOffset(view, ifd0, tiffStart, le, 0x8825);
-            if (gpsOffset == null) return null;
-            var gpsIfd = tiffStart + gpsOffset;
-            var latRef = findTagValue(view, gpsIfd, tiffStart, le, 0x0001, "ascii");
-            var lngRef = findTagValue(view, gpsIfd, tiffStart, le, 0x0003, "ascii");
-            var lat = findTagValue(view, gpsIfd, tiffStart, le, 0x0002, "rational3");
-            var lng = findTagValue(view, gpsIfd, tiffStart, le, 0x0004, "rational3");
-            if (lat == null || lng == null) return null;
-            return {
-              lat: (latRef && latRef.charAt(0).toUpperCase() === "S" ? -1 : 1) * lat,
-              lng: (lngRef && lngRef.charAt(0).toUpperCase() === "W" ? -1 : 1) * lng,
-              accuracy: null, source: "exif"
-            };
-          }
-        }
-        if (marker === 0xda) break;
-        offset += 2 + size;
-      }
-    } catch (e) { return null; }
-    return null;
-  }
-
-  /* ---------- Image Decoding & Resizing ---------- */
-  async function fileToArrayBuffer(file) {
-    if (file.arrayBuffer) return file.arrayBuffer();
-    return new Promise(function (res, rej) {
-      var fr = new FileReader();
-      fr.onload = function () { res(fr.result); };
-      fr.onerror = function () { rej(fr.error); };
-      fr.readAsArrayBuffer(file);
-    });
-  }
-  async function decodeImage(blob) {
-    if (window.createImageBitmap) {
-      try { return await createImageBitmap(blob); } catch (e) {}
-    }
-    var u = URL.createObjectURL(blob);
-    try {
-      return await new Promise(function (res, rej) {
-        var img = new Image();
-        img.onload = function () { res(img); };
-        img.onerror = function () { rej(new Error("img")); };
-        img.src = u;
-      });
-    } finally { URL.revokeObjectURL(u); }
-  }
-  function drawToBlob(source, maxEdge, quality) {
-    var w = source.width || source.naturalWidth, h = source.height || source.naturalHeight;
-    var scale = Math.min(1, maxEdge / Math.max(w, h));
-    var cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
-    var canvas = document.createElement("canvas");
-    canvas.width = cw; canvas.height = ch;
-    canvas.getContext("2d").drawImage(source, 0, 0, cw, ch);
-    return new Promise(function (res, rej) {
-      canvas.toBlob(function (blob) {
-        if (!blob) rej(new Error("toBlob")); else res({ blob: blob, width: cw, height: ch });
-      }, "image/jpeg", quality);
-    });
-  }
-
-  /* ---------- Export helpers (CSV + XLSX) ---------- */
-  function xmlEsc(s) {
-    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-  }
-  function csvEsc(s) {
-    var v = s == null ? "" : String(s);
-    return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-  }
-  function buildCsv(rows) {
-    return "\uFEFF" + rows.map(function (r) { return r.map(csvEsc).join(","); }).join("\r\n");
-  }
-  function colName(n) {
-    var s = "", x = n;
-    while (x > 0) { var m = (x - 1) % 26; s = String.fromCharCode(65 + m) + s; x = Math.floor((x - 1) / 26); }
-    return s;
-  }
-  function buildXlsxBlob(rows) {
-    var sheetRows = rows.map(function (row, r) {
-      var cells = row.map(function (val, c) {
-        return '<c r="' + colName(c + 1) + (r + 1) + '" t="inlineStr"><is><t>' + xmlEsc(val) + "</t></is></c>";
-      }).join("");
-      return '<row r="' + (r + 1) + '">' + cells + "</row>";
-    }).join("");
-    var zip = new JSZip();
-    zip.file("[Content_Types].xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
-    zip.file("_rels/.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
-    zip.file("xl/workbook.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Inspection_Records" sheetId="1" r:id="rId1"/></sheets></workbook>');
-    zip.file("xl/_rels/workbook.xml.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>');
-    zip.file("xl/worksheets/sheet1.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + sheetRows + "</sheetData></worksheet>");
-    return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-  }
-
-  /* ---------- UI Helpers ---------- */
   function toast(msg) {
     var el = $("toast");
-    el.textContent = msg;
-    el.hidden = false;
+    el.textContent = msg; el.hidden = false;
     clearTimeout(toast._t);
     toast._t = setTimeout(function () { el.hidden = true; }, 2800);
   }
@@ -681,16 +415,254 @@
     state.objectUrls.push(u);
     return u;
   }
+
+  /* ---------- IndexedDB (3 stores: projects, elements, photos) ---------- */
+  var dbPromise = null, useMem = false;
+  var mem = { projects: {}, elements: {}, photos: {} };
+
+  function openDb() {
+    if (useMem) return Promise.resolve(null);
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise(function (resolve) {
+      if (!window.indexedDB) { useMem = true; resolve(null); return; }
+      try {
+        var req = indexedDB.open(APP_DB, APP_VER);
+        req.onupgradeneeded = function () {
+          var db = req.result;
+          if (!db.objectStoreNames.contains("projects")) db.createObjectStore("projects", { keyPath: "id" });
+          if (!db.objectStoreNames.contains("elements")) {
+            var es = db.createObjectStore("elements", { keyPath: "id" });
+            es.createIndex("byProject", "projectId", { unique: false });
+          }
+          if (!db.objectStoreNames.contains("photos")) {
+            var ps = db.createObjectStore("photos", { keyPath: "id" });
+            ps.createIndex("byElement", "elementId", { unique: false });
+            ps.createIndex("byProject", "projectId", { unique: false });
+          }
+        };
+        req.onsuccess = function () { resolve(req.result); };
+        req.onerror = function () { useMem = true; resolve(null); };
+      } catch (e) { useMem = true; resolve(null); }
+    });
+    return dbPromise;
+  }
+  function txDone(tx) {
+    return new Promise(function (res, rej) {
+      tx.oncomplete = function () { res(); };
+      tx.onerror = function () { rej(tx.error); };
+      tx.onabort = function () { rej(tx.error || new Error("abort")); };
+    });
+  }
+  function reqDone(req) {
+    return new Promise(function (res, rej) {
+      req.onsuccess = function () { res(req.result); };
+      req.onerror = function () { rej(req.error); };
+    });
+  }
+  async function getAll(store) {
+    var db = await openDb();
+    if (!db) return Object.values(mem[store]);
+    return reqDone(db.transaction(store).objectStore(store).getAll());
+  }
+  async function putItem(store, obj) {
+    var db = await openDb();
+    if (!db) { mem[store][obj.id] = obj; return; }
+    var tx = db.transaction(store, "readwrite");
+    tx.objectStore(store).put(obj);
+    await txDone(tx);
+  }
+  async function deleteItem(store, id) {
+    var db = await openDb();
+    if (!db) { delete mem[store][id]; return; }
+    var tx = db.transaction(store, "readwrite");
+    tx.objectStore(store).delete(id);
+    await txDone(tx);
+  }
+  async function deleteElementCascade(elemId) {
+    var ph = state.photos.filter(function (p) { return p.elementId === elemId; });
+    var db = await openDb();
+    if (!db) {
+      delete mem.elements[elemId];
+      ph.forEach(function (p) { delete mem.photos[p.id]; });
+      return;
+    }
+    var tx = db.transaction(["elements", "photos"], "readwrite");
+    tx.objectStore("elements").delete(elemId);
+    ph.forEach(function (p) { tx.objectStore("photos").delete(p.id); });
+    await txDone(tx);
+  }
+  async function deleteProjectCascade(projId) {
+    var els = state.elements.filter(function (e) { return e.projectId === projId; });
+    var ph = state.photos.filter(function (p) { return p.projectId === projId; });
+    var db = await openDb();
+    if (!db) {
+      delete mem.projects[projId];
+      els.forEach(function (e) { delete mem.elements[e.id]; });
+      ph.forEach(function (p) { delete mem.photos[p.id]; });
+      return;
+    }
+    var tx = db.transaction(["projects", "elements", "photos"], "readwrite");
+    tx.objectStore("projects").delete(projId);
+    els.forEach(function (e) { tx.objectStore("elements").delete(e.id); });
+    ph.forEach(function (p) { tx.objectStore("photos").delete(p.id); });
+    await txDone(tx);
+  }
+  async function clearAllData() {
+    var db = await openDb();
+    if (!db) { mem = { projects: {}, elements: {}, photos: {} }; return; }
+    var tx = db.transaction(["projects", "elements", "photos"], "readwrite");
+    tx.objectStore("projects").clear();
+    tx.objectStore("elements").clear();
+    tx.objectStore("photos").clear();
+    await txDone(tx);
+  }
+
+  async function reloadData() {
+    state.projects = (await getAll("projects")).sort(function (a, b) {
+      return String(b.inspectionDate || b.createdAt || "").localeCompare(String(a.inspectionDate || a.createdAt || ""));
+    });
+    state.elements = (await getAll("elements")).sort(function (a, b) {
+      return String(a.createdAt || "").localeCompare(String(b.createdAt || ""));
+    });
+    state.photos = (await getAll("photos")).sort(function (a, b) {
+      return String(a.takenAt || "").localeCompare(String(b.takenAt || ""));
+    });
+  }
+  function getProject(id) { return state.projects.filter(function (p) { return p.id === id; })[0] || null; }
+  function getElement(id) { return state.elements.filter(function (e) { return e.id === id; })[0] || null; }
+  function elementsOf(projId) { return state.elements.filter(function (e) { return e.projectId === projId && !e.isDraft; }); }
+  function photosOfElement(elemId) { return state.photos.filter(function (p) { return p.elementId === elemId; }); }
+  function photosOfProject(projId) { return state.photos.filter(function (p) { return p.projectId === projId; }); }
+
+  /* ---------- GPS, EXIF & Images ---------- */
+  function getDeviceGps() {
+    return new Promise(function (resolve) {
+      if (!navigator.geolocation) { resolve(null); return; }
+      var done = false;
+      var timer = setTimeout(function () { if (!done) { done = true; resolve(null); } }, 8500);
+      try {
+        navigator.geolocation.getCurrentPosition(
+          function (pos) {
+            if (done) return; done = true; clearTimeout(timer);
+            resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, source: "device" });
+          },
+          function () { if (!done) { done = true; clearTimeout(timer); resolve(null); } },
+          { enableHighAccuracy: true, timeout: 8000, maximumAge: 20000 }
+        );
+      } catch (e) { clearTimeout(timer); resolve(null); }
+    });
+  }
+  function getAscii(v, o, l) { var s = ""; for (var i = 0; i < l; i++) s += String.fromCharCode(v.getUint8(o + i)); return s; }
+  function readRational(v, o, le) { var n = v.getUint32(o, le), d = v.getUint32(o + 4, le); return d ? n / d : 0; }
+  function findTagOffset(v, ifd, ts, le, tag) {
+    if (ifd + 2 > v.byteLength) return null;
+    var n = v.getUint16(ifd, le);
+    for (var i = 0; i < n; i++) {
+      var e = ifd + 2 + i * 12;
+      if (e + 12 > v.byteLength) break;
+      if (v.getUint16(e, le) === tag) return v.getUint32(e + 8, le);
+    }
+    return null;
+  }
+  function findTagValue(v, ifd, ts, le, tag, kind) {
+    if (ifd + 2 > v.byteLength) return null;
+    var n = v.getUint16(ifd, le);
+    for (var i = 0; i < n; i++) {
+      var e = ifd + 2 + i * 12;
+      if (e + 12 > v.byteLength) break;
+      if (v.getUint16(e, le) !== tag) continue;
+      var cnt = v.getUint32(e + 4, le), vo = e + 8;
+      if (kind === "ascii") {
+        var b = cnt > 4 ? ts + v.getUint32(vo, le) : vo, s = "";
+        for (var c = 0; c < cnt && b + c < v.byteLength; c++) { var ch = v.getUint8(b + c); if (!ch) break; s += String.fromCharCode(ch); }
+        return s;
+      }
+      if (kind === "rational3") {
+        var st = ts + v.getUint32(vo, le);
+        if (st + 24 > v.byteLength) return null;
+        return readRational(v, st, le) + readRational(v, st + 8, le) / 60 + readRational(v, st + 16, le) / 3600;
+      }
+    }
+    return null;
+  }
+  function readGpsFromExif(buffer) {
+    try {
+      var v = new DataView(buffer);
+      if (v.byteLength < 12 || v.getUint16(0, false) !== 0xffd8) return null;
+      var o = 2;
+      while (o + 4 < v.byteLength) {
+        if (v.getUint8(o) !== 0xff) break;
+        var m = v.getUint8(o + 1), sz = v.getUint16(o + 2, false);
+        if (m === 0xe1 && o + 10 < v.byteLength && getAscii(v, o + 4, 4) === "Exif") {
+          var ts = o + 10, end = v.getUint16(ts, false);
+          var le = end === 0x4949 ? true : (end === 0x4d4d ? false : null);
+          if (le === null || v.getUint16(ts + 2, le) !== 0x002a) return null;
+          var ifd0 = ts + v.getUint32(ts + 4, le);
+          var go = findTagOffset(v, ifd0, ts, le, 0x8825);
+          if (go == null) return null;
+          var gi = ts + go;
+          var lr = findTagValue(v, gi, ts, le, 0x0001, "ascii"), nr = findTagValue(v, gi, ts, le, 0x0003, "ascii");
+          var la = findTagValue(v, gi, ts, le, 0x0002, "rational3"), ln = findTagValue(v, gi, ts, le, 0x0004, "rational3");
+          if (la == null || ln == null) return null;
+          return { lat: (lr && lr[0].toUpperCase() === "S" ? -1 : 1) * la, lng: (nr && nr[0].toUpperCase() === "W" ? -1 : 1) * ln, accuracy: null, source: "exif" };
+        }
+        if (m === 0xda) break;
+        o += 2 + sz;
+      }
+    } catch (e) {}
+    return null;
+  }
+  async function fileToArrayBuffer(f) {
+    if (f.arrayBuffer) return f.arrayBuffer();
+    return new Promise(function (res, rej) { var fr = new FileReader(); fr.onload = function () { res(fr.result); }; fr.onerror = function () { rej(fr.error); }; fr.readAsArrayBuffer(f); });
+  }
+  async function decodeImage(blob) {
+    if (window.createImageBitmap) { try { return await createImageBitmap(blob); } catch (e) {} }
+    var u = URL.createObjectURL(blob);
+    try {
+      return await new Promise(function (res, rej) { var img = new Image(); img.onload = function () { res(img); }; img.onerror = function () { rej(new Error("img")); }; img.src = u; });
+    } finally { URL.revokeObjectURL(u); }
+  }
+  function drawToBlob(src, maxEdge, q) {
+    var w = src.width || src.naturalWidth, h = src.height || src.naturalHeight;
+    var sc = Math.min(1, maxEdge / Math.max(w, h));
+    var cw = Math.max(1, Math.round(w * sc)), ch = Math.max(1, Math.round(h * sc));
+    var c = document.createElement("canvas"); c.width = cw; c.height = ch;
+    c.getContext("2d").drawImage(src, 0, 0, cw, ch);
+    return new Promise(function (res, rej) {
+      c.toBlob(function (b) { if (!b) rej(new Error("blob")); else res({ blob: b, width: cw, height: ch }); }, "image/jpeg", q);
+    });
+  }
+
+  /* ---------- CSV & XLSX builders ---------- */
+  function csvEsc(s) { var v = s == null ? "" : String(s); return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function buildCsv(rows) { return "\uFEFF" + rows.map(function (r) { return r.map(csvEsc).join(","); }).join("\r\n"); }
+  function colName(n) { var s = "", x = n; while (x > 0) { var m = (x - 1) % 26; s = String.fromCharCode(65 + m) + s; x = Math.floor((x - 1) / 26); } return s; }
+  function buildXlsxBlob(rows) {
+    var sRows = rows.map(function (row, r) {
+      var cells = row.map(function (val, c) { return '<c r="' + colName(c + 1) + (r + 1) + '" t="inlineStr"><is><t>' + xmlEsc(val) + "</t></is></c>"; }).join("");
+      return '<row r="' + (r + 1) + '">' + cells + "</row>";
+    }).join("");
+    var zip = new JSZip();
+    zip.file("[Content_Types].xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>');
+    zip.file("_rels/.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>');
+    zip.file("xl/workbook.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Structural_Inspection" sheetId="1" r:id="rId1"/></sheets></workbook>');
+    zip.file("xl/_rels/workbook.xml.rels", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>');
+    zip.file("xl/worksheets/sheet1.xml", '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>' + sRows + "</sheetData></worksheet>");
+    return zip.generateAsync({ type: "blob", mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  }
+
+  /* ---------- UI & Language ---------- */
   function isFileProtocol() { return location.protocol === "file:"; }
   function registerPwa() {
     if (isFileProtocol() || !("serviceWorker" in navigator) || !window.isSecureContext) return;
-    navigator.serviceWorker.register("./sw.js").catch(function (err) { console.warn("SW skipped", err); });
+    navigator.serviceWorker.register("./sw.js").catch(function (e) { console.warn("SW skip", e); });
   }
   function updateBanner() {
     var el = $("modeBanner");
     if (isFileProtocol()) { el.textContent = t("fileBanner"); el.hidden = false; }
     else if (!window.isSecureContext) { el.textContent = t("insecureBanner"); el.hidden = false; }
-    else { el.hidden = true; }
+    else el.hidden = true;
   }
   function updateConnBadge() {
     var el = $("connBadge");
@@ -699,9 +671,324 @@
     el.textContent = navigator.onLine ? t("online") : t("offline");
   }
 
-  /* ---------- Render Checklist ---------- */
+  function applyLang() {
+    var p = I18N[state.lang];
+    document.documentElement.lang = p.htmlLang;
+    document.title = p.title + " v3.0";
+    $("appTitle").textContent = p.title;
+    $("appTagline").textContent = p.tagline;
+    $("btnLang").textContent = p.langBtn;
+    $("tab-projects").textContent = p.tabProjects;
+    $("tab-projectDetail").textContent = p.tabProjectDetail;
+    $("tab-element").textContent = p.tabElement;
+    $("tab-album").textContent = p.tabAlbum;
+    $("tab-map").textContent = p.tabMap;
+    $("tab-export").textContent = p.tabExport;
+    $("searchProjInput").placeholder = p.searchProj;
+    $("btnNewProject").textContent = p.newProject;
+    $("btnBackToProjects").textContent = p.backProjects;
+    $("btnBackToProject").textContent = p.backProject;
+    $("btnEditProject").textContent = p.editProject;
+    $("btnAddElement").textContent = p.addElement;
+    $("btnProjectReport").textContent = p.projectReport;
+    $("btnProjectZip").textContent = p.projectZip;
+    $("btnDeleteProject").textContent = p.deleteProject;
+    $("searchElemInput").placeholder = p.searchElem;
+    $("fltAll").textContent = p.fltAll;
+    $("fltSse").textContent = p.fltSse;
+    $("fltFollowup").textContent = p.fltFollowup;
+    $("fltNormal").textContent = p.fltNormal;
+    $("lblProjDmo").textContent = p.projDmo;
+    $("lblProjEstate").textContent = p.projEstate;
+    $("lblProjDate").textContent = p.projDate;
+    $("lblProjHandover").textContent = p.projHandover;
+    $("lblProjSe").textContent = p.projSe;
+    $("lblProjSse").textContent = p.projSse;
+    $("lblProjNotes").textContent = p.projNotes;
+    $("btnProjCancel").textContent = p.cancel;
+    $("btnProjSave").textContent = p.save;
+    $("secElemHeader").textContent = p.secElemHeader;
+    $("btnElemReport").textContent = p.elemReport;
+    $("lblElemName").textContent = p.elemName;
+    $("lblElemLoc").textContent = p.elemLoc;
+    $("lblElemStatus").textContent = p.elemStatus;
+    $("lblElemWhen").textContent = p.elemWhen;
+    var st = $("fieldElemStatus");
+    st.options[0].textContent = p.statusNormal;
+    st.options[1].textContent = p.statusFollowup;
+    st.options[2].textContent = p.statusSse;
+    $("lblElemGps").textContent = p.elemGps;
+    $("btnRefreshGps").textContent = p.refreshGps;
+    $("btnPickMapLoc").textContent = p.pickMapLoc;
+    $("secChecklistTitle").textContent = p.secChecklistTitle;
+    $("btnFillNa").textContent = p.fillNa;
+    $("btnClearRatings").textContent = p.clearRatings;
+    $("checklistHint").textContent = p.checklistHint;
+    $("secRemarksTitle").textContent = p.secRemarksTitle;
+    $("lblRemarks").textContent = p.remarks;
+    $("lblCondition").textContent = p.condition;
+    $("lblWorks").textContent = p.works;
+    $("lblPhotos").textContent = p.photos;
+    $("btnTakePhoto").textContent = p.takePhoto;
+    $("btnPickPhoto").textContent = p.pickPhoto;
+    $("photoHint").textContent = p.photoHint;
+    $("btnSaveElem").textContent = p.saveElem;
+    $("btnCancelElem").textContent = p.cancel;
+    $("btnDeleteElem").textContent = p.deleteElem;
+    $("exportTitle").textContent = p.exportTitle;
+    $("exportBlurb").textContent = p.exportBlurb;
+    $("lblExportProj").textContent = p.lblExportProj;
+    $("btnExportZip").textContent = p.exportZipBtn;
+    $("btnImportBackup").textContent = p.importBtn;
+    $("privacyTitle").textContent = p.privacyTitle;
+    $("privacyBlurb").textContent = p.privacyBlurb;
+    $("btnClearAll").textContent = p.clearAll;
+    $("pickerTitle").textContent = p.pickerTitle;
+    $("pickerHint").textContent = p.pickerHint;
+    $("btnPickerCancel").textContent = p.cancel;
+    $("btnPickerApply").textContent = p.pickerApply;
+    $("reportModalTitle").textContent = p.reportModalTitle;
+    $("btnReportPrintNow").textContent = p.reportPrintNow;
+    $("btnReportClose2").textContent = p.close;
+    $("btnToggleBasemap").textContent = state.basemap === "arcgis" ? p.basemapArcgis : p.basemapOsm;
+    updateBanner();
+    updateConnBadge();
+    renderChecklistUi();
+    updateElemGpsText();
+  }
+
+  function populateProjectDropdowns() {
+    ["albumProjectFilter", "mapProjectFilter", "exportProjectSelect"].forEach(function (id) {
+      var sel = $(id);
+      var prev = sel.value || "all";
+      sel.innerHTML = '<option value="all">' + xmlEsc(t("allProjects")) + '</option>';
+      state.projects.forEach(function (proj) {
+        var opt = document.createElement("option");
+        opt.value = proj.id;
+        opt.textContent = (proj.dmo ? "[" + proj.dmo + "] " : "") + proj.estate + " (" + fmtDateDisplay(proj.inspectionDate) + ")";
+        sel.appendChild(opt);
+      });
+      sel.value = state.projects.some(function (p) { return p.id === prev; }) ? prev : "all";
+    });
+  }
+
+  async function cleanupEmptyElementDraft() {
+    if (!state.currentElementId || !state.isNewElementUnsaved) return;
+    var photos = photosOfElement(state.currentElementId);
+    var dirty = ($("fieldElemName").value || "").trim() || ($("fieldElemLoc").value || "").trim() ||
+      ($("fieldRemarks").value || "").trim() || Object.keys(state.currentRatings).length > 0;
+    if (!dirty && !photos.length) {
+      await deleteElementCascade(state.currentElementId);
+      state.currentElementId = null;
+      state.isNewElementUnsaved = false;
+      await reloadData();
+    }
+  }
+
+  async function showTab(name) {
+    if (state.tab === "element" && name !== "element") await cleanupEmptyElementDraft();
+    state.tab = name;
+    $("tab-projectDetail").hidden = !state.currentProjectId;
+    $("tab-element").hidden = !state.currentElementId;
+    ["projects", "projectDetail", "element", "album", "map", "export"].forEach(function (id) {
+      var view = $("view-" + id), tab = $("tab-" + id), on = id === name;
+      view.classList.toggle("is-active", on);
+      view.hidden = !on;
+      tab.classList.toggle("is-active", on);
+      tab.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    populateProjectDropdowns();
+    if (name === "projects") renderProjects();
+    if (name === "projectDetail") renderProjectDetail();
+    if (name === "album") renderAlbum();
+    if (name === "map") renderMap();
+    if (name === "export") refreshStorage();
+  }
+
+  /* ---------- Render Projects List ---------- */
+  function renderProjects() {
+    var q = ($("searchProjInput").value || "").trim().toLowerCase();
+    var list = $("projectsList");
+    list.innerHTML = "";
+    var rows = state.projects.filter(function (p) {
+      if (!q) return true;
+      return [p.estate, p.dmo, p.inspectionDate, p.seName, p.sseName, p.notes].join(" ").toLowerCase().indexOf(q) !== -1;
+    });
+    $("projectsEmpty").hidden = rows.length > 0;
+    $("projectsEmpty").textContent = t("emptyProjects");
+
+    rows.forEach(function (proj) {
+      var els = elementsOf(proj.id);
+      var phCount = photosOfProject(proj.id).length;
+      var sseCount = els.filter(function (e) { return elemStatusOf(e) === "sse" || hasSevereRating(e.ratings); }).length;
+
+      var card = document.createElement("article");
+      card.className = "card card-project";
+      card.tabIndex = 0;
+
+      var ic = document.createElement("div");
+      ic.className = "card-icon";
+      ic.textContent = (proj.dmo || proj.estate || "HD").slice(0, 3).toUpperCase();
+
+      var body = document.createElement("div");
+      var h = document.createElement("h3");
+      h.textContent = (proj.dmo ? "[" + proj.dmo + "] " : "") + proj.estate;
+      var meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = fmtDateDisplay(proj.inspectionDate) + " · " + els.length + " " + t("elemCount") + " · " + phCount + " " + t("photosCount") + (proj.seName ? " · SE: " + proj.seName : "");
+      body.appendChild(h);
+      body.appendChild(meta);
+
+      var badges = document.createElement("div");
+      badges.className = "badges";
+      if (sseCount > 0) {
+        var b = document.createElement("span");
+        b.className = "badge badge-danger";
+        b.textContent = t("fltSse") + ": " + sseCount;
+        badges.appendChild(b);
+      } else {
+        var b2 = document.createElement("span");
+        b2.className = "badge badge-ok";
+        b2.textContent = els.length + " " + t("elemCount");
+        badges.appendChild(b2);
+      }
+
+      card.appendChild(ic); card.appendChild(body); card.appendChild(badges);
+      card.addEventListener("click", function () { openProject(proj.id); });
+      list.appendChild(card);
+    });
+  }
+
+  function openProjectModal(proj) {
+    $("projModalTitle").textContent = proj ? t("projModalEdit") : t("projModalNew");
+    $("fieldProjId").value = proj ? proj.id : "";
+    $("fieldProjDmo").value = proj ? (proj.dmo || "") : "";
+    $("fieldProjEstate").value = proj ? (proj.estate || "") : "";
+    $("fieldProjDate").value = proj ? (proj.inspectionDate || todayYmd()) : todayYmd();
+    $("fieldProjHandover").value = proj ? (proj.handoverDate || "") : "";
+    $("fieldProjSe").value = proj ? (proj.seName || "") : "";
+    $("fieldProjSse").value = proj ? (proj.sseName || "") : "";
+    $("fieldProjNotes").value = proj ? (proj.notes || "") : "";
+    $("projectModal").hidden = false;
+    $("fieldProjEstate").focus();
+  }
+
+  async function saveProjectForm() {
+    var estate = $("fieldProjEstate").value.trim();
+    if (!estate) { toast(t("needEstate")); $("fieldProjEstate").focus(); return; }
+    var id = $("fieldProjId").value || uid();
+    var existing = getProject(id);
+    var proj = {
+      id: id,
+      createdAt: existing ? existing.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      dmo: $("fieldProjDmo").value.trim(),
+      estate: estate,
+      inspectionDate: $("fieldProjDate").value || todayYmd(),
+      handoverDate: $("fieldProjHandover").value.trim(),
+      seName: $("fieldProjSe").value.trim(),
+      sseName: $("fieldProjSse").value.trim(),
+      notes: $("fieldProjNotes").value.trim()
+    };
+    await putItem("projects", proj);
+    await reloadData();
+    $("projectModal").hidden = true;
+    toast(t("saved"));
+    openProject(proj.id);
+  }
+
+  function openProject(projId) {
+    state.currentProjectId = projId;
+    showTab("projectDetail");
+  }
+
+  /* ---------- Render Project Detail (Elements inside Project) ---------- */
+  function renderProjectDetail() {
+    revokeUrls();
+    var proj = getProject(state.currentProjectId);
+    if (!proj) { showTab("projects"); return; }
+
+    var allEls = elementsOf(proj.id);
+    var phTotal = photosOfProject(proj.id).length;
+    $("crumbProjectName").textContent = proj.estate;
+    $("heroEstateTitle").textContent = (proj.dmo ? "[" + proj.dmo + "] " : "") + proj.estate;
+    $("heroEstateMeta").textContent =
+      fmtDateDisplay(proj.inspectionDate) +
+      (proj.handoverDate ? " · Handover: " + proj.handoverDate : "") +
+      (proj.seName ? " · SE: " + proj.seName : "") +
+      (proj.sseName ? " · SSE: " + proj.sseName : "") +
+      " · " + allEls.length + " " + t("elemCount") + " · " + phTotal + " " + t("photosCount");
+
+    var q = ($("searchElemInput").value || "").trim().toLowerCase();
+    var rows = allEls.filter(function (el) {
+      var st = elemStatusOf(el);
+      if (state.filterStatus !== "all" && st !== state.filterStatus) return false;
+      if (!q) return true;
+      return [el.name, el.location, el.remarks, el.condition, el.externalWorks].join(" ").toLowerCase().indexOf(q) !== -1;
+    });
+
+    var list = $("elementsList");
+    list.innerHTML = "";
+    $("elementsEmpty").hidden = rows.length > 0;
+    $("elementsEmpty").textContent = t("emptyElements");
+
+    rows.forEach(function (el, idx) {
+      var photos = photosOfElement(el.id);
+      var card = document.createElement("article");
+      card.className = "card";
+      card.tabIndex = 0;
+
+      var thumb;
+      if (photos[0] && (photos[0].thumb || photos[0].blob)) {
+        thumb = document.createElement("img");
+        thumb.className = "card-thumb";
+        thumb.alt = "";
+        thumb.src = urlFor(photos[0].thumb || photos[0].blob);
+      } else {
+        thumb = document.createElement("div");
+        thumb.className = "card-thumb";
+        thumb.textContent = "#" + (idx + 1);
+      }
+
+      var body = document.createElement("div");
+      var h = document.createElement("h3");
+      h.textContent = "#" + (idx + 1) + " " + (el.name || "Element") + (el.location ? " — " + el.location : "");
+      var meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = fmtHkt(el.createdAt) + " · " + photos.length + " " + t("photosCount") + (el.remarks ? " · " + el.remarks.slice(0, 60) : "");
+      body.appendChild(h); body.appendChild(meta);
+
+      var badges = document.createElement("div");
+      badges.className = "badges";
+      var st = elemStatusOf(el);
+      var sb = document.createElement("span");
+      sb.className = "badge " + (st === "sse" ? "badge-danger" : st === "followup" ? "badge-warn" : "badge-ok");
+      sb.textContent = st === "sse" ? t("fltSse") : st === "followup" ? t("fltFollowup") : t("fltNormal");
+      badges.appendChild(sb);
+
+      var mr = maxRatingOf(el.ratings);
+      if (mr > 0) {
+        var rb = document.createElement("span");
+        rb.className = "badge " + (mr >= 5 ? "badge-danger" : mr >= 4 ? "badge-warn" : "badge-neutral");
+        rb.textContent = t("maxRate") + " " + mr;
+        badges.appendChild(rb);
+      }
+      var hasGps = hasCoords(el.gps) || photos.some(function (p) { return hasCoords(p); });
+      var gb = document.createElement("span");
+      gb.className = "badge " + (hasGps ? "badge-ok" : "badge-neutral");
+      gb.textContent = hasGps ? t("hasCoords") : t("noCoords");
+      badges.appendChild(gb);
+
+      card.appendChild(thumb); card.appendChild(body); card.appendChild(badges);
+      card.addEventListener("click", function () { openElement(el.id); });
+      list.appendChild(card);
+    });
+  }
+
+  /* ---------- Structural Element Form + Checklist ---------- */
   function renderChecklistUi() {
     var wrap = $("checklistContainer");
+    if (!wrap) return;
     wrap.innerHTML = "";
     CHECKLIST_SCHEMA.forEach(function (sec) {
       var secEl = document.createElement("div");
@@ -720,23 +1007,13 @@
 
         var lbl = document.createElement("div");
         lbl.className = "cl-label";
-        if (state.lang === "zh") {
-          lbl.innerHTML = xmlEsc(item.zh) + "<small>" + xmlEsc(item.en) + "</small>";
-        } else {
-          lbl.textContent = item.en;
-        }
+        lbl.innerHTML = state.lang === "zh" ? (xmlEsc(item.zh) + "<small>" + xmlEsc(item.en) + "</small>") : xmlEsc(item.en);
         if (item.hasCustomText) {
           var inp = document.createElement("input");
           inp.type = "text";
-          inp.id = "fieldOthersText";
           inp.placeholder = t("othersPlaceholder");
           inp.value = state.currentOthersText || "";
-          inp.style.marginTop = "6px";
-          inp.style.minHeight = "36px";
-          inp.style.padding = "6px 10px";
-          inp.style.border = "1px solid var(--line)";
-          inp.style.borderRadius = "8px";
-          inp.style.width = "100%";
+          inp.style.cssText = "margin-top:6px;min-height:36px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;width:100%;";
           inp.addEventListener("input", function () { state.currentOthersText = inp.value; });
           lbl.appendChild(inp);
         }
@@ -757,289 +1034,122 @@
           });
           grp.appendChild(b);
         });
-
-        row.appendChild(code);
-        row.appendChild(lbl);
-        row.appendChild(grp);
+        row.appendChild(code); row.appendChild(lbl); row.appendChild(grp);
         secEl.appendChild(row);
       });
       wrap.appendChild(secEl);
     });
     updateSseBanner();
   }
-
   function updateChecklistSelection() {
     document.querySelectorAll(".rate-btn").forEach(function (b) {
-      var code = b.getAttribute("data-code");
-      var val = b.getAttribute("data-val");
-      b.classList.toggle("is-selected", state.currentRatings[code] === val);
+      b.classList.toggle("is-selected", state.currentRatings[b.getAttribute("data-code")] === b.getAttribute("data-val"));
     });
     updateSseBanner();
   }
-
   function updateSseBanner() {
-    var severe = hasSevereRating(state.currentRatings);
-    $("sseAlertBanner").hidden = !severe;
+    var sev = hasSevereRating(state.currentRatings);
+    $("sseAlertBanner").hidden = !sev;
     $("sseAlertBanner").textContent = t("sseAlert");
-    if (severe && $("fieldStatus").value === "normal") {
-      $("fieldStatus").value = "sse";
-    }
+    if (sev && $("fieldElemStatus").value === "normal") $("fieldElemStatus").value = "sse";
   }
-
-  function applyLang() {
-    var pack = I18N[state.lang];
-    document.documentElement.lang = pack.htmlLang;
-    document.title = pack.title + " v2.0";
-    $("appTitle").textContent = pack.title;
-    $("appTagline").textContent = pack.tagline;
-    $("btnLang").textContent = pack.langBtn;
-    $("tab-records").textContent = pack.tabRecords;
-    $("tab-edit").textContent = state.currentId && !state.isNewUnsaved ? pack.tabEditOpen : pack.tabEdit;
-    $("tab-album").textContent = pack.tabAlbum;
-    $("tab-map").textContent = pack.tabMap;
-    $("tab-export").textContent = pack.tabExport;
-    $("searchInput").placeholder = pack.search;
-    $("lblSearch").textContent = pack.search;
-    $("btnNewFromList").textContent = pack.newRecord;
-    $("fltAll").textContent = pack.fltAll;
-    $("fltSse").textContent = pack.fltSse;
-    $("fltFollowup").textContent = pack.fltFollowup;
-    $("fltNormal").textContent = pack.fltNormal;
-    $("secHeaderTitle").textContent = pack.secHeaderTitle;
-    $("secChecklistTitle").textContent = pack.secChecklistTitle;
-    $("secRemarksTitle").textContent = pack.secRemarksTitle;
-    $("btnPrintReport").textContent = pack.printReport;
-    $("lblWhen").textContent = pack.when;
-    $("lblDmo").textContent = pack.dmo;
-    $("lblSite").textContent = pack.site;
-    $("lblStructure").textContent = pack.structure;
-    $("lblHandover").textContent = pack.handover;
-    $("lblStatus").textContent = pack.status;
-    var stSel = $("fieldStatus");
-    stSel.options[0].textContent = pack.statusNormal;
-    stSel.options[1].textContent = pack.statusFollowup;
-    stSel.options[2].textContent = pack.statusSse;
-    $("lblRecGps").textContent = pack.recGps;
-    $("btnRefreshGps").textContent = pack.refreshGps;
-    $("btnPickMapLoc").textContent = pack.pickMapLoc;
-    $("btnFillNa").textContent = pack.fillNa;
-    $("btnClearRatings").textContent = pack.clearRatings;
-    $("checklistHint").textContent = pack.checklistHint;
-    $("lblRemarks").textContent = pack.remarks;
-    $("lblCondition").textContent = pack.condition;
-    $("lblWorks").textContent = pack.works;
-    $("lblSeName").textContent = pack.seName;
-    $("lblSseName").textContent = pack.sseName;
-    $("lblPhotos").textContent = pack.photos;
-    $("btnTakePhoto").textContent = pack.takePhoto;
-    $("btnPickPhoto").textContent = pack.pickPhoto;
-    $("photoHint").textContent = pack.photoHint;
-    $("btnSave").textContent = pack.save;
-    $("btnExportSingle").textContent = pack.exportSingle;
-    $("btnCancel").textContent = pack.cancel;
-    $("btnDelete").textContent = pack.delete;
-    $("exportTitle").textContent = pack.exportTitle;
-    $("exportBlurb").textContent = pack.exportBlurb;
-    $("lblDateFrom").textContent = pack.dateFrom;
-    $("lblDateTo").textContent = pack.dateTo;
-    $("btnExport").textContent = pack.exportBtn;
-    $("btnImportBackup").textContent = pack.importBtn;
-    $("privacyTitle").textContent = pack.privacyTitle;
-    $("privacyBlurb").textContent = pack.privacyBlurb;
-    $("btnClearAll").textContent = pack.clearAll;
-    $("btnCloseLightbox").setAttribute("aria-label", pack.lightboxClose);
-    $("pickerTitle").textContent = pack.pickerTitle;
-    $("pickerHint").textContent = pack.pickerHint;
-    $("btnPickerCancel").textContent = pack.cancel;
-    $("btnPickerApply").textContent = pack.pickerApply;
-    $("reportModalTitle").textContent = pack.reportModalTitle;
-    $("btnReportPrintNow").textContent = pack.reportPrintNow;
-    $("btnReportClose2").textContent = pack.lightboxClose;
-    $("btnToggleBasemap").textContent = state.basemap === "arcgis" ? pack.basemapArcgis : pack.basemapOsm;
-    updateBanner();
-    updateConnBadge();
-    renderChecklistUi();
-    updateRecGpsText();
-  }
-
-  function updateRecGpsText() {
-    var el = $("recGpsText");
+  function updateElemGpsText() {
+    var el = $("elemGpsText");
     if (!el) return;
     if (hasCoords(state.currentGps)) {
-      var txt = fmtCoord(state.currentGps.lat, state.currentGps.lng);
-      if (state.currentGps.accuracy) txt += " (±" + Math.round(state.currentGps.accuracy) + "m)";
-      el.textContent = txt;
-    } else {
-      el.textContent = t("noCoords");
-    }
+      el.textContent = fmtCoord(state.currentGps.lat, state.currentGps.lng) + (state.currentGps.accuracy ? " (±" + Math.round(state.currentGps.accuracy) + "m)" : "");
+    } else el.textContent = t("noCoords");
   }
 
-  /* ---------- Clean up untouched empty draft on tab switch ---------- */
-  async function cleanupEmptyDraftIfNeeded() {
-    if (!state.currentId || !state.isNewUnsaved) return;
-    var photos = state.photosByRecord[state.currentId] || [];
-    var hasText = ($("fieldSite").value || "").trim() || ($("fieldDmo").value || "").trim() ||
-      ($("fieldStructure").value || "").trim() || ($("fieldRemarks").value || "").trim() ||
-      ($("fieldCondition").value || "").trim() || ($("fieldWorks").value || "").trim() ||
-      Object.keys(state.currentRatings).length > 0;
-    if (!hasText && photos.length === 0) {
-      await deleteRecordAndPhotos(state.currentId);
-      state.currentId = null;
-      state.isNewUnsaved = false;
-      $("tab-edit").textContent = t("tabEdit");
-      await reloadData();
-    }
-  }
-
-  async function showTab(name) {
-    if (state.tab === "edit" && name !== "edit") {
-      await cleanupEmptyDraftIfNeeded();
-    }
-    state.tab = name;
-    ["records", "edit", "album", "map", "export"].forEach(function (id) {
-      var view = $("view-" + id), tab = $("tab-" + id), on = id === name;
-      view.classList.toggle("is-active", on);
-      view.hidden = !on;
-      tab.classList.toggle("is-active", on);
-      tab.setAttribute("aria-selected", on ? "true" : "false");
-    });
-    if (name === "records") renderRecords();
-    if (name === "album") renderAlbum();
-    if (name === "map") renderMap();
-    if (name === "export") refreshStorage();
-  }
-
-  async function reloadData() {
-    var recs = await getAllRecords();
-    recs.sort(function (a, b) { return String(b.createdAt || "").localeCompare(String(a.createdAt || "")); });
-    state.records = recs;
-    var photos = await getAllPhotos();
-    var map = {};
-    photos.forEach(function (p) {
-      if (!map[p.recordId]) map[p.recordId] = [];
-      map[p.recordId].push(p);
-    });
-    Object.keys(map).forEach(function (k) {
-      map[k].sort(function (a, b) { return String(a.takenAt || "").localeCompare(String(b.takenAt || "")); });
-    });
-    state.photosByRecord = map;
-  }
-
-  function recordStatusOf(rec) {
-    if (rec.status) return rec.status;
-    return hasSevereRating(rec.ratings) ? "sse" : "normal";
-  }
-
-  function recordMatches(rec, q) {
-    var st = recordStatusOf(rec);
-    if (state.filterStatus !== "all" && st !== state.filterStatus) return false;
-    if (!q) return true;
-    var photos = state.photosByRecord[rec.id] || [];
-    var blob = [
-      rec.siteName, rec.dmo, rec.structure, rec.remarks, rec.condition, rec.externalWorks,
-      rec.seName, rec.sseName, fmtHkt(rec.createdAt)
-    ].concat(photos.map(function (p) { return (p.caption || "") + " " + fmtCoord(p.lat, p.lng); })).join(" ").toLowerCase();
-    return blob.indexOf(q) !== -1;
-  }
-
-  function renderRecords() {
-    revokeUrls();
-    var q = ($("searchInput").value || "").trim().toLowerCase();
-    var list = $("recordsList");
-    list.innerHTML = "";
-    var rows = state.records.filter(function (r) { return !r.isDraft && recordMatches(r, q); });
-    $("recordsEmpty").hidden = rows.length > 0;
-    $("recordsEmpty").textContent = t("emptyRecords");
-
-    rows.forEach(function (rec) {
-      var photos = state.photosByRecord[rec.id] || [];
-      var card = document.createElement("article");
-      card.className = "card";
-      card.tabIndex = 0;
-      card.setAttribute("role", "button");
-
-      var thumb;
-      if (photos[0] && (photos[0].thumb || photos[0].blob)) {
-        thumb = document.createElement("img");
-        thumb.className = "card-thumb";
-        thumb.alt = "";
-        thumb.src = urlFor(photos[0].thumb || photos[0].blob);
-      } else {
-        thumb = document.createElement("div");
-        thumb.className = "card-thumb";
-        thumb.textContent = t("photos");
-      }
-
-      var body = document.createElement("div");
-      var h = document.createElement("h3");
-      h.textContent = (rec.dmo ? "[" + rec.dmo + "] " : "") + (rec.siteName || t("newRecord")) + (rec.structure ? " · " + rec.structure : "");
-      var meta = document.createElement("div");
-      meta.className = "meta";
-      meta.textContent = fmtHkt(rec.createdAt) + " · " + photos.length + " " + t("photosCount");
-      body.appendChild(h);
-      body.appendChild(meta);
-
-      var badges = document.createElement("div");
-      badges.className = "badges";
-      var st = recordStatusOf(rec);
-      var stBadge = document.createElement("span");
-      if (st === "sse") { stBadge.className = "badge badge-danger"; stBadge.textContent = t("fltSse"); }
-      else if (st === "followup") { stBadge.className = "badge badge-warn"; stBadge.textContent = t("fltFollowup"); }
-      else { stBadge.className = "badge badge-ok"; stBadge.textContent = t("fltNormal"); }
-      badges.appendChild(stBadge);
-
-      var mr = maxRatingOf(rec.ratings);
-      if (mr > 0) {
-        var rb = document.createElement("span");
-        rb.className = "badge " + (mr >= 5 ? "badge-danger" : mr >= 4 ? "badge-warn" : "badge-neutral");
-        rb.textContent = t("maxRate") + " " + mr;
-        badges.appendChild(rb);
-      }
-
-      var hasGps = hasCoords(rec.gps) || photos.some(function (p) { return hasCoords(p); });
-      var gb = document.createElement("span");
-      gb.className = "badge " + (hasGps ? "badge-ok" : "badge-neutral");
-      gb.textContent = hasGps ? t("hasCoords") : t("noCoords");
-      badges.appendChild(gb);
-
-      card.appendChild(thumb);
-      card.appendChild(body);
-      card.appendChild(badges);
-      card.addEventListener("click", function () { openRecord(rec.id); });
-      list.appendChild(card);
-    });
-  }
-
-  function fillForm(rec) {
-    $("fieldId").value = rec.id;
-    $("fieldWhen").value = fmtHkt(rec.createdAt) + " (HKT)";
-    $("fieldDmo").value = rec.dmo || "";
-    $("fieldSite").value = rec.siteName || "";
-    $("fieldStructure").value = rec.structure || "";
-    $("fieldHandover").value = rec.handoverDate || "";
-    $("fieldStatus").value = recordStatusOf(rec);
-    $("fieldRemarks").value = rec.remarks || "";
-    $("fieldCondition").value = rec.condition || "";
-    $("fieldWorks").value = rec.externalWorks || "";
-    $("fieldSeName").value = rec.seName || "";
-    $("fieldSseName").value = rec.sseName || "";
-    state.currentRatings = Object.assign({}, rec.ratings || {});
-    state.currentOthersText = rec.othersText || "";
-    state.currentGps = rec.gps ? Object.assign({}, rec.gps) : null;
-    $("btnDelete").hidden = !!rec.isDraft;
-    $("btnExportSingle").hidden = !!rec.isDraft;
-    $("btnPrintReport").hidden = !!rec.isDraft;
-    $("tab-edit").textContent = rec.isDraft ? t("tabEdit") : t("tabEditOpen");
+  function fillElementForm(el) {
+    var proj = getProject(el.projectId);
+    $("crumbElemContext").textContent = (proj ? proj.estate + " › " : "") + (el.name || t("addElement"));
+    $("fieldElemId").value = el.id;
+    $("fieldElemName").value = el.name || "";
+    $("fieldElemLoc").value = el.location || "";
+    $("fieldElemStatus").value = elemStatusOf(el);
+    $("fieldElemWhen").value = fmtHkt(el.createdAt) + " (HKT)";
+    $("fieldRemarks").value = el.remarks || "";
+    $("fieldCondition").value = el.condition || "";
+    $("fieldWorks").value = el.externalWorks || "";
+    state.currentRatings = Object.assign({}, el.ratings || {});
+    state.currentOthersText = el.othersText || "";
+    state.currentGps = el.gps ? Object.assign({}, el.gps) : null;
+    $("btnDeleteElem").hidden = !!el.isDraft;
+    $("btnElemReport").hidden = !!el.isDraft;
     renderChecklistUi();
-    updateRecGpsText();
-    renderPhotoGrid(rec.id);
+    updateElemGpsText();
+    renderPhotoGrid(el.id);
   }
 
-  function renderPhotoGrid(recordId) {
+  async function startNewElement() {
+    if (!state.currentProjectId) return;
+    var el = {
+      id: uid(), projectId: state.currentProjectId,
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      name: "", location: "", status: "normal", ratings: {}, othersText: "",
+      remarks: "", condition: "", externalWorks: "", gps: null, isDraft: true
+    };
+    state.currentElementId = el.id;
+    state.isNewElementUnsaved = true;
+    await putItem("elements", el);
+    await reloadData();
+    fillElementForm(el);
+    showTab("element");
+    $("fieldElemName").focus();
+    $("elemGpsText").textContent = t("gpsLoading");
+    getDeviceGps().then(function (gps) {
+      if (state.currentElementId === el.id && !hasCoords(state.currentGps)) {
+        state.currentGps = gps;
+        updateElemGpsText();
+      }
+    });
+  }
+
+  function openElement(elemId) {
+    var el = getElement(elemId);
+    if (!el) return;
+    state.currentProjectId = el.projectId;
+    state.currentElementId = el.id;
+    state.isNewElementUnsaved = !!el.isDraft;
+    fillElementForm(el);
+    showTab("element");
+  }
+
+  async function saveElementForm() {
+    var el = getElement(state.currentElementId);
+    if (!el) return;
+    var name = $("fieldElemName").value.trim();
+    if (!name) { toast(t("needElemName")); $("fieldElemName").focus(); return; }
+    var remarks = $("fieldRemarks").value.trim();
+    if (hasSevereRating(state.currentRatings) && !remarks) {
+      if (!(await showConfirm(t("sseRemarksConfirm")))) { $("fieldRemarks").focus(); return; }
+    }
+    var updated = {
+      id: el.id, projectId: el.projectId,
+      createdAt: el.createdAt, updatedAt: new Date().toISOString(),
+      name: name, location: $("fieldElemLoc").value.trim(),
+      status: $("fieldElemStatus").value,
+      ratings: Object.assign({}, state.currentRatings),
+      othersText: state.currentOthersText.trim(),
+      remarks: remarks,
+      condition: $("fieldCondition").value.trim(),
+      externalWorks: $("fieldWorks").value.trim(),
+      gps: state.currentGps ? Object.assign({}, state.currentGps) : null,
+      isDraft: false
+    };
+    await putItem("elements", updated);
+    state.isNewElementUnsaved = false;
+    state.currentElementId = null;
+    await reloadData();
+    toast(t("saved"));
+    showTab("projectDetail");
+  }
+
+  function renderPhotoGrid(elemId) {
     var box = $("photoGrid");
     box.innerHTML = "";
-    var photos = state.photosByRecord[recordId] || [];
-    photos.forEach(function (p) {
+    photosOfElement(elemId).forEach(function (p) {
       var card = document.createElement("div");
       card.className = "photo-card";
       var img = document.createElement("img");
@@ -1048,288 +1158,125 @@
       img.addEventListener("click", function () { openLightbox(p); });
       var cap = document.createElement("div");
       cap.className = "cap";
-      cap.textContent = fmtCoord(p.lat, p.lng) + (hasCoords(p) && p.accuracy ? " · ±" + Math.round(p.accuracy) + "m" : "");
+      cap.textContent = fmtCoord(p.lat, p.lng);
       var note = document.createElement("input");
-      note.type = "text";
-      note.className = "photo-note";
+      note.type = "text"; note.className = "photo-note";
       note.placeholder = t("photoNotePlaceholder");
       note.value = p.caption || "";
-      note.addEventListener("change", async function () {
-        p.caption = note.value.trim();
-        await putPhoto(p);
-      });
+      note.addEventListener("change", async function () { p.caption = note.value.trim(); await putItem("photos", p); });
       var del = document.createElement("button");
-      del.type = "button";
-      del.className = "btn-icon";
-      del.textContent = "×";
-      del.addEventListener("click", function (ev) { ev.stopPropagation(); removePhoto(p.id); });
-      card.appendChild(img);
-      card.appendChild(del);
-      card.appendChild(cap);
-      card.appendChild(note);
+      del.type = "button"; del.className = "btn-icon"; del.textContent = "×";
+      del.addEventListener("click", async function (ev) {
+        ev.stopPropagation();
+        await deleteItem("photos", p.id);
+        await reloadData();
+        renderPhotoGrid(elemId);
+      });
+      card.appendChild(img); card.appendChild(del); card.appendChild(cap); card.appendChild(note);
       box.appendChild(card);
     });
   }
 
-  async function openRecord(id) {
-    await reloadData();
-    var rec = state.records.filter(function (r) { return r.id === id; })[0];
-    if (!rec) return;
-    state.currentId = id;
-    state.isNewUnsaved = !!rec.isDraft;
-    fillForm(rec);
-    showTab("edit");
-  }
-
-  async function startNewRecord() {
-    var rec = {
-      id: uid(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      dmo: "", siteName: "", structure: "", handoverDate: "",
-      status: "normal", ratings: {}, othersText: "",
-      remarks: "", condition: "", externalWorks: "",
-      seName: "", sseName: "", gps: null, isDraft: true
-    };
-    state.currentId = rec.id;
-    state.isNewUnsaved = true;
-    await putRecord(rec);
-    await reloadData();
-    fillForm(rec);
-    showTab("edit");
-    $("fieldSite").focus();
-    // Pre-warm GPS silently in background
-    $("recGpsText").textContent = t("gpsLoading");
-    getDeviceGps().then(function (gps) {
-      if (state.currentId === rec.id && !hasCoords(state.currentGps)) {
-        state.currentGps = gps;
-        updateRecGpsText();
-      }
-    });
-  }
-
-  async function saveCurrent() {
-    if (!state.currentId) return;
-    var existing = await getRecord(state.currentId);
-    if (!existing) return;
-    var siteName = $("fieldSite").value.trim();
-    if (!siteName) { toast(t("needSite")); $("fieldSite").focus(); return; }
-    var remarks = $("fieldRemarks").value.trim();
-    if (hasSevereRating(state.currentRatings) && !remarks) {
-      var proceed = await showConfirm(t("sseRemarksConfirm"));
-      if (!proceed) { $("fieldRemarks").focus(); return; }
-    }
-    var rec = {
-      id: existing.id,
-      createdAt: existing.createdAt,
-      updatedAt: new Date().toISOString(),
-      dmo: $("fieldDmo").value.trim(),
-      siteName: siteName,
-      structure: $("fieldStructure").value.trim(),
-      handoverDate: $("fieldHandover").value.trim(),
-      status: $("fieldStatus").value,
-      ratings: Object.assign({}, state.currentRatings),
-      othersText: state.currentOthersText.trim(),
-      remarks: remarks,
-      condition: $("fieldCondition").value.trim(),
-      externalWorks: $("fieldWorks").value.trim(),
-      seName: $("fieldSeName").value.trim(),
-      sseName: $("fieldSseName").value.trim(),
-      gps: state.currentGps ? Object.assign({}, state.currentGps) : null,
-      isDraft: false
-    };
-    await putRecord(rec);
-    state.isNewUnsaved = false;
-    await reloadData();
-    fillForm(rec);
-    toast(t("saved"));
-    showTab("records");
-  }
-
-  async function cancelEdit() {
-    if (!state.currentId) { showTab("records"); return; }
-    var existing = await getRecord(state.currentId);
-    if (existing && existing.isDraft) {
-      var photos = state.photosByRecord[existing.id] || [];
-      var dirty = ($("fieldSite").value || "").trim() || photos.length > 0 || Object.keys(state.currentRatings).length > 0;
-      if (dirty && !(await showConfirm(t("draftCancel")))) return;
-      await deleteRecordAndPhotos(existing.id);
-      toast(t("cancelled"));
-    }
-    state.currentId = null;
-    state.isNewUnsaved = false;
-    $("tab-edit").textContent = t("tabEdit");
-    await reloadData();
-    showTab("records");
-  }
-
-  async function deleteCurrent() {
-    if (!state.currentId) return;
-    if (!(await showConfirm(t("confirmDelete")))) return;
-    await deleteRecordAndPhotos(state.currentId);
-    state.currentId = null;
-    state.isNewUnsaved = false;
-    $("tab-edit").textContent = t("tabEdit");
-    await reloadData();
-    toast(t("deleted"));
-    showTab("records");
-  }
-
   async function addPhotoFiles(fileList, wantDeviceGps) {
-    if (!state.currentId) await startNewRecord();
+    if (!state.currentElementId || !state.currentProjectId) return;
     var files = Array.prototype.slice.call(fileList || []).filter(function (f) {
       return !!(f && (/^image\//.test(f.type || "") || /\.(jpe?g|png|heic|heif|webp|gif)$/i.test(f.name || "")));
     });
     if (!files.length) return;
-    state.savingPhoto = true;
-    $("btnTakePhoto").disabled = true;
-    $("btnPickPhoto").disabled = true;
+    $("btnTakePhoto").disabled = true; $("btnPickPhoto").disabled = true;
     var deviceGps = hasCoords(state.currentGps) ? state.currentGps : null;
     if (wantDeviceGps) {
       var fresh = await getDeviceGps();
-      if (hasCoords(fresh)) {
-        deviceGps = fresh;
-        state.currentGps = fresh;
-        updateRecGpsText();
-      }
+      if (hasCoords(fresh)) { deviceGps = fresh; state.currentGps = fresh; updateElemGpsText(); }
     }
     for (var i = 0; i < files.length; i++) {
       try {
         var buf = await fileToArrayBuffer(files[i]);
-        var exifGps = readGpsFromExif(buf);
-        var gps = hasCoords(exifGps) ? exifGps : (hasCoords(deviceGps) ? deviceGps : null);
-        if (hasCoords(gps) && !hasCoords(state.currentGps)) {
-          state.currentGps = gps;
-          updateRecGpsText();
-        }
-        var decoded = await decodeImage(new Blob([buf], { type: files[i].type || "image/jpeg" }));
-        var full = await drawToBlob(decoded, MAX_EDGE, JPEG_Q);
-        var thumb = await drawToBlob(decoded, THUMB_EDGE, 0.8);
-        if (decoded.close) decoded.close();
-        await putPhoto({
-          id: uid(), recordId: state.currentId,
-          blob: full.blob, thumb: thumb.blob,
-          width: full.width, height: full.height, mime: "image/jpeg",
+        var exif = readGpsFromExif(buf);
+        var gps = hasCoords(exif) ? exif : (hasCoords(deviceGps) ? deviceGps : null);
+        if (hasCoords(gps) && !hasCoords(state.currentGps)) { state.currentGps = gps; updateElemGpsText(); }
+        var dec = await decodeImage(new Blob([buf], { type: files[i].type || "image/jpeg" }));
+        var full = await drawToBlob(dec, MAX_EDGE, JPEG_Q);
+        var thumb = await drawToBlob(dec, THUMB_EDGE, 0.8);
+        if (dec.close) dec.close();
+        await putItem("photos", {
+          id: uid(), projectId: state.currentProjectId, elementId: state.currentElementId,
+          blob: full.blob, thumb: thumb.blob, width: full.width, height: full.height, mime: "image/jpeg",
           lat: gps ? gps.lat : null, lng: gps ? gps.lng : null,
           accuracy: gps && gps.accuracy != null ? gps.accuracy : null,
-          gpsSource: gps ? gps.source : "none",
-          caption: "", takenAt: new Date().toISOString(), originalName: files[i].name || ""
+          gpsSource: gps ? gps.source : "none", caption: "", takenAt: new Date().toISOString(), originalName: files[i].name || ""
         });
         toast(hasCoords(gps) ? t("gpsPhoto") : t("noGpsPhoto"));
-      } catch (err) { console.warn(err); toast(t("photoFail")); }
+      } catch (e) { console.warn(e); toast(t("photoFail")); }
     }
-    state.savingPhoto = false;
-    $("btnTakePhoto").disabled = false;
-    $("btnPickPhoto").disabled = false;
+    $("btnTakePhoto").disabled = false; $("btnPickPhoto").disabled = false;
     await reloadData();
-    renderPhotoGrid(state.currentId);
+    renderPhotoGrid(state.currentElementId);
   }
 
-  async function removePhoto(id) {
-    await deletePhoto(id);
-    await reloadData();
-    if (state.currentId) renderPhotoGrid(state.currentId);
-    if (state.tab === "album") renderAlbum();
+  /* ---------- Album & Map ---------- */
+  function openLightbox(photo) {
+    var el = getElement(photo.elementId), proj = getProject(photo.projectId);
+    $("lightboxImg").src = urlFor(photo.blob || photo.thumb);
+    $("lightboxCap").textContent = [proj && proj.estate, el && el.name, photo.caption, fmtHkt(photo.takenAt), fmtCoord(photo.lat, photo.lng)].filter(Boolean).join(" · ");
+    $("lightbox").hidden = false;
   }
-
-  /* ---------- Album & Lightbox ---------- */
   function renderAlbum() {
     revokeUrls();
-    var box = $("albumGrid");
-    box.innerHTML = "";
-    var items = [];
-    state.records.filter(function (r) { return !r.isDraft; }).forEach(function (rec) {
-      (state.photosByRecord[rec.id] || []).forEach(function (p) { items.push({ rec: rec, photo: p }); });
-    });
-    $("albumEmpty").hidden = items.length > 0;
+    var projFilter = $("albumProjectFilter").value || "all";
+    var box = $("albumGrid"); box.innerHTML = "";
+    var list = state.photos.filter(function (p) {
+      var el = getElement(p.elementId);
+      if (!el || el.isDraft) return false;
+      return projFilter === "all" || p.projectId === projFilter;
+    }).slice().reverse();
+    $("albumEmpty").hidden = list.length > 0;
     $("albumEmpty").textContent = t("emptyAlbum");
-    items.sort(function (a, b) { return String(b.photo.takenAt || "").localeCompare(String(a.photo.takenAt || "")); });
-    items.forEach(function (item) {
-      var p = item.photo, rec = item.rec;
-      var card = document.createElement("div");
-      card.className = "album-card";
-      var img = document.createElement("img");
-      img.alt = rec.siteName || "";
-      img.src = urlFor(p.thumb || p.blob);
-      img.addEventListener("click", function () { openLightbox(p, rec); });
-      var cap = document.createElement("div");
-      cap.className = "cap";
-      cap.textContent = (rec.siteName || "") + (p.caption ? " — " + p.caption : "") + " · " + fmtHkt(p.takenAt);
+    list.forEach(function (p) {
+      var el = getElement(p.elementId), proj = getProject(p.projectId);
+      var card = document.createElement("div"); card.className = "album-card";
+      var img = document.createElement("img"); img.src = urlFor(p.thumb || p.blob); img.alt = "";
+      img.addEventListener("click", function () { openLightbox(p); });
+      var cap = document.createElement("div"); cap.className = "cap";
+      cap.textContent = (proj ? proj.estate + " · " : "") + (el ? el.name : "") + (p.caption ? " — " + p.caption : "");
       card.appendChild(img); card.appendChild(cap); box.appendChild(card);
     });
   }
-  function openLightbox(photo, rec) {
-    $("lightboxImg").src = urlFor(photo.blob || photo.thumb);
-    var bits = [];
-    if (rec && rec.siteName) bits.push(rec.siteName);
-    if (photo.caption) bits.push(photo.caption);
-    bits.push(fmtHkt(photo.takenAt));
-    bits.push(fmtCoord(photo.lat, photo.lng));
-    $("lightboxCap").textContent = bits.join(" · ");
-    $("lightbox").hidden = false;
-  }
-  function closeLightbox() { $("lightbox").hidden = true; $("lightboxImg").removeAttribute("src"); }
 
-  /* ---------- Map & Manual Picker ---------- */
   function createBasemapLayer() {
     if (state.basemap === "osm") {
       return L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Tiles &copy; Esri" });
     }
     return L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}", { maxZoom: 19, attribution: "Tiles &copy; Esri" });
   }
-
-  function collectMappedPoints() {
+  function renderMap() {
+    var projFilter = $("mapProjectFilter").value || "all";
     var pts = [];
-    state.records.filter(function (r) { return !r.isDraft; }).forEach(function (rec) {
-      var photos = state.photosByRecord[rec.id] || [];
-      var addedPhoto = false;
-      photos.forEach(function (p) {
-        if (!hasCoords(p)) return;
-        addedPhoto = true;
-        pts.push({ lat: p.lat, lng: p.lng, label: rec.siteName || t("newRecord"), sub: (p.caption || rec.structure || "") + " · " + fmtHkt(p.takenAt) });
-      });
-      if (!addedPhoto && hasCoords(rec.gps)) {
-        pts.push({ lat: rec.gps.lat, lng: rec.gps.lng, label: rec.siteName || t("newRecord"), sub: (rec.structure || "") + " · " + fmtHkt(rec.createdAt) });
+    state.elements.filter(function (e) { return !e.isDraft && (projFilter === "all" || e.projectId === projFilter); }).forEach(function (el) {
+      var proj = getProject(el.projectId);
+      var phs = photosOfElement(el.id).filter(function (p) { return hasCoords(p); });
+      if (phs.length) {
+        phs.forEach(function (p) {
+          pts.push({ lat: p.lat, lng: p.lng, label: (proj ? proj.estate + " — " : "") + el.name, sub: (el.location || "") + (p.caption ? " · " + p.caption : "") });
+        });
+      } else if (hasCoords(el.gps)) {
+        pts.push({ lat: el.gps.lat, lng: el.gps.lng, label: (proj ? proj.estate + " — " : "") + el.name, sub: el.location || "" });
       }
     });
-    return pts;
-  }
 
-  function renderSimplePlot(pts) {
-    var wrap = $("mapOffline");
-    wrap.hidden = false;
-    if (!pts.length) { wrap.innerHTML = "<p>" + xmlEsc(t("mapEmpty")) + "</p>"; return; }
-    var w = 640, h = 220, pad = 28;
-    var lats = pts.map(function (p) { return p.lat; }), lngs = pts.map(function (p) { return p.lng; });
-    var minLa = Math.min.apply(null, lats), maxLa = Math.max.apply(null, lats);
-    var minLo = Math.min.apply(null, lngs), maxLo = Math.max.apply(null, lngs);
-    var spanLa = Math.max(maxLa - minLa, 0.0002), spanLo = Math.max(maxLo - minLo, 0.0002);
-    var dots = pts.map(function (p, i) {
-      var x = pad + ((p.lng - minLo) / spanLo) * (w - pad * 2);
-      var y = pad + (1 - (p.lat - minLa) / spanLa) * (h - pad * 2);
-      return '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="6" fill="#0f766e"></circle>' +
-        '<text x="' + (x + 8).toFixed(1) + '" y="' + (y - 6).toFixed(1) + '" font-size="11" fill="#14222a">' + xmlEsc((i + 1) + ". " + p.label) + "</text>";
-    }).join("");
-    var list = pts.map(function (p, i) { return "<li>" + xmlEsc((i + 1) + ". " + p.label + " — " + fmtCoord(p.lat, p.lng)) + "</li>"; }).join("");
-    wrap.innerHTML = "<h2>" + xmlEsc(t("simplePlot")) + "</h2><svg class=\"plot\" viewBox=\"0 0 " + w + " " + h + "\">" + dots + "</svg><ol>" + list + "</ol>";
-  }
-
-  function renderMap() {
-    var pts = collectMappedPoints();
     var online = navigator.onLine && !isFileProtocol();
     $("mapHint").textContent = online ? t("mapHintOnline") : t("mapHintOffline");
     if (!online || typeof L === "undefined") {
       $("mapCanvas").hidden = true;
       if (state.map) { state.map.remove(); state.map = null; }
-      renderSimplePlot(pts);
+      var wrap = $("mapOffline"); wrap.hidden = false;
+      wrap.innerHTML = pts.length ? "<h2>" + xmlEsc(t("simplePlot")) + "</h2><ol>" + pts.map(function (p) { return "<li>" + xmlEsc(p.label + " — " + fmtCoord(p.lat, p.lng)) + "</li>"; }).join("") + "</ol>" : "<p>" + xmlEsc(t("mapEmpty")) + "</p>";
       return;
     }
     $("mapCanvas").hidden = false;
     $("mapOffline").hidden = pts.length > 0;
     if (!pts.length) $("mapOffline").innerHTML = "<p>" + xmlEsc(t("mapEmpty")) + "</p>";
-    if (L.Icon && L.Icon.Default && !L.Icon.Default.imagePath) {
-      L.Icon.Default.imagePath = "./vendor/leaflet/images/";
-    }
+    if (L.Icon && L.Icon.Default && !L.Icon.Default.imagePath) L.Icon.Default.imagePath = "./vendor/leaflet/images/";
     if (!state.map) {
       state.map = L.map("mapCanvas", { zoomControl: true });
       state.tileLayer = createBasemapLayer().addTo(state.map);
@@ -1339,9 +1286,7 @@
     var bounds = [];
     pts.forEach(function (p) {
       var m = L.marker([p.lat, p.lng]).bindPopup("<strong>" + xmlEsc(p.label) + "</strong><br>" + xmlEsc(p.sub) + "<br>" + xmlEsc(fmtCoord(p.lat, p.lng)));
-      m.addTo(state.map);
-      state._markers.push(m);
-      bounds.push([p.lat, p.lng]);
+      m.addTo(state.map); state._markers.push(m); bounds.push([p.lat, p.lng]);
     });
     setTimeout(function () {
       if (!state.map) return;
@@ -1351,40 +1296,31 @@
       else state.map.setView([22.3193, 114.1694], 11);
     }, 80);
   }
-
   function openMapPicker() {
     if (typeof L === "undefined") { toast(t("mapHintOffline")); return; }
     $("pickerModal").hidden = false;
-    var initLat = hasCoords(state.currentGps) ? state.currentGps.lat : 22.3193;
-    var initLng = hasCoords(state.currentGps) ? state.currentGps.lng : 114.1694;
-    state.pickerLatLng = { lat: initLat, lng: initLng };
+    var la = hasCoords(state.currentGps) ? state.currentGps.lat : 22.3193;
+    var ln = hasCoords(state.currentGps) ? state.currentGps.lng : 114.1694;
+    state.pickerLatLng = { lat: la, lng: ln };
     setTimeout(function () {
       if (state.pickerMap) { state.pickerMap.remove(); state.pickerMap = null; }
-      state.pickerMap = L.map("pickerMap").setView([initLat, initLng], hasCoords(state.currentGps) ? 17 : 12);
+      state.pickerMap = L.map("pickerMap").setView([la, ln], hasCoords(state.currentGps) ? 17 : 12);
       createBasemapLayer().addTo(state.pickerMap);
-      state.pickerMarker = L.marker([initLat, initLng]).addTo(state.pickerMap);
-      state.pickerMap.on("click", function (e) {
-        state.pickerLatLng = { lat: e.latlng.lat, lng: e.latlng.lng };
-        state.pickerMarker.setLatLng(e.latlng);
-      });
+      state.pickerMarker = L.marker([la, ln]).addTo(state.pickerMap);
+      state.pickerMap.on("click", function (e) { state.pickerLatLng = { lat: e.latlng.lat, lng: e.latlng.lng }; state.pickerMarker.setLatLng(e.latlng); });
       state.pickerMap.invalidateSize();
     }, 60);
   }
 
-  /* ---------- Printable HD Appendix X Summary Report ---------- */
-  async function openReportPreview() {
-    if (!state.currentId) return;
-    var rec = await getRecord(state.currentId);
-    if (!rec) return;
-    var photos = state.photosByRecord[rec.id] || [];
-    var ratings = rec.ratings || {};
-
+  /* ---------- Report Builder (Full Estate Report & Single Element Appendix X) ---------- */
+  function buildElementReportPageHtml(proj, el, idxLabel) {
+    var photos = photosOfElement(el.id);
+    var ratings = el.ratings || {};
     var rowsHtml = "";
     CHECKLIST_SCHEMA.forEach(function (sec) {
       rowsHtml += '<tr><th colspan="8">' + xmlEsc(sec.sectionEn) + '</th></tr>';
       sec.items.forEach(function (item) {
-        var label = item.en;
-        if (item.hasCustomText && rec.othersText) label += " : " + rec.othersText;
+        var label = item.en + (item.hasCustomText && el.othersText ? " : " + el.othersText : "");
         var chosen = ratings[item.code] || "";
         var cols = RATINGS.map(function (r) {
           return '<td style="text-align:center;">' + (chosen === r ? '<span class="circled">' + r + '</span>' : r) + '</td>';
@@ -1392,38 +1328,77 @@
         rowsHtml += '<tr><td>' + item.code + '</td><td>' + xmlEsc(label) + '</td>' + cols + '</tr>';
       });
     });
+    var photosHtml = photos.length ? '<div class="report-photos">' + photos.map(function (p, i) {
+      return '<figure><img src="' + urlFor(p.thumb || p.blob) + '"><figcaption><strong>' + xmlEsc(idxLabel) + ' Photo ' + (i + 1) + '</strong>' +
+        (p.caption ? ': ' + xmlEsc(p.caption) : '') + ' (' + xmlEsc(fmtCoord(p.lat, p.lng)) + ')</figcaption></figure>';
+    }).join("") + '</div>' : '';
 
-    var photosHtml = "";
-    if (photos.length) {
-      photosHtml = '<div class="report-photos">' + photos.map(function (p, i) {
-        return '<figure><img src="' + urlFor(p.thumb || p.blob) + '"><figcaption>Photo ' + (i + 1) +
-          (p.caption ? ': ' + xmlEsc(p.caption) : '') + ' (' + xmlEsc(fmtCoord(p.lat, p.lng)) + ')</figcaption></figure>';
-      }).join("") + '</div>';
-    }
-
-    $("reportSheet").innerHTML =
-      '<div style="text-align:right;font-size:0.78rem;">Appendix X</div>' +
+    return '<div class="report-page">' +
+      '<div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span>' + xmlEsc(idxLabel) + '</span><span>Appendix X</span></div>' +
       '<h3>HOUSING DEPARTMENT</h3><h3>ESTATE MANAGEMENT DIVISION</h3><h3>SUMMARY REPORT OF STRUCTURAL INSPECTION</h3>' +
       '<table class="report-meta">' +
-      '<tr><td><strong>DMO:</strong> ' + xmlEsc(rec.dmo || "-") + '</td><td><strong>Estate:</strong> ' + xmlEsc(rec.siteName || "-") + '</td><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateShort(rec.createdAt)) + '</td></tr>' +
-      '<tr><td colspan="2"><strong>Inspected Structure:</strong> ' + xmlEsc(rec.structure || "-") + '</td><td><strong>Handover Date:</strong> ' + xmlEsc(rec.handoverDate || "-") + '</td></tr>' +
+      '<tr><td><strong>DMO:</strong> ' + xmlEsc(proj.dmo || "-") + '</td><td><strong>Estate:</strong> ' + xmlEsc(proj.estate || "-") + '</td><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td></tr>' +
+      '<tr><td colspan="2"><strong>Inspected Structure:</strong> ' + xmlEsc(el.name + (el.location ? " (" + el.location + ")" : "")) + '</td><td><strong>Handover Date:</strong> ' + xmlEsc(proj.handoverDate || "-") + '</td></tr>' +
       '</table>' +
-      '<p style="font-size:0.76rem;margin-bottom:6px;">* Ratings (1) Good to (5) Severe. For ratings (4) poor / (5) severe, elaborate in Remarks and draw SSE\'s attention.</p>' +
+      '<p style="font-size:0.75rem;margin-bottom:5px;">* For ratings (4) poor / (5) severe, the Assessment Engineer shall elaborate the structural conditions in the Remarks and draw his/her SSE\'s attention.</p>' +
       '<table class="report-table"><tr><th style="width:40px;">Item</th><th>Description</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>N.A.</th></tr>' +
       rowsHtml +
-      '<tr><td><strong>5.1</strong></td><td colspan="7"><strong>Remarks:</strong><br>' + xmlEsc(rec.remarks || "-") +
-      (rec.condition ? '<br><em>Condition:</em> ' + xmlEsc(rec.condition) : '') +
-      (rec.externalWorks ? '<br><em>External Works:</em> ' + xmlEsc(rec.externalWorks) : '') + '</td></tr>' +
+      '<tr><td><strong>5.1</strong></td><td colspan="7"><strong>Remarks:</strong> ' + xmlEsc(el.remarks || "-") +
+      (el.condition ? '<br><em>Condition:</em> ' + xmlEsc(el.condition) : '') +
+      (el.externalWorks ? '<br><em>External Works:</em> ' + xmlEsc(el.externalWorks) : '') + '</td></tr>' +
       '</table>' +
-      '<table class="report-meta" style="margin-top:12px;">' +
-      '<tr><td><strong>Reported by SE:</strong> ' + xmlEsc(rec.seName || "________________") + '<br><br>Signature: ________________ &nbsp; Date: ' + xmlEsc(fmtDateShort(rec.createdAt)) + '</td>' +
-      '<td><strong>Endorsed by SSE:</strong> ' + xmlEsc(rec.sseName || "________________") + '<br><br>Signature: ________________ &nbsp; Date: ____________</td></tr>' +
-      '</table>' + photosHtml;
+      '<table class="report-meta" style="margin-top:10px;">' +
+      '<tr><td><strong>Reported by SE:</strong> ' + xmlEsc(proj.seName || "________________") + '<br><br>Signature: ________________ &nbsp; Date: ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td>' +
+      '<td><strong>Endorsed by SSE:</strong> ' + xmlEsc(proj.sseName || "________________") + '<br><br>Signature: ________________ &nbsp; Date: ____________</td></tr>' +
+      '</table>' + photosHtml + '</div>';
+  }
 
+  function openProjectReport(projId) {
+    var proj = getProject(projId);
+    if (!proj) return;
+    var els = elementsOf(proj.id);
+    if (!els.length) { toast(t("emptyElements")); return; }
+    var sseCount = els.filter(function (e) { return hasSevereRating(e.ratings) || elemStatusOf(e) === "sse"; }).length;
+
+    var summaryRows = els.map(function (el, i) {
+      var mr = maxRatingOf(el.ratings);
+      var ph = photosOfElement(el.id).length;
+      return '<tr><td>' + (i + 1) + '</td><td><strong>' + xmlEsc(el.name) + '</strong>' + (el.location ? '<br><small>' + xmlEsc(el.location) + '</small>' : '') + '</td>' +
+        '<td style="text-align:center;">' + (mr || "-") + '</td>' +
+        '<td style="text-align:center;">' + (mr >= 4 ? '<strong style="color:#b42318;">SSE Attention</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
+        '<td style="text-align:center;">' + ph + '</td>' +
+        '<td>' + xmlEsc(el.remarks || "-") + '</td></tr>';
+    }).join("");
+
+    var coverHtml = '<div class="report-page">' +
+      '<h3>HOUSING DEPARTMENT — ESTATE MANAGEMENT DIVISION</h3>' +
+      '<h3 style="font-size:1.15rem;margin:6px 0 12px;">ESTATE STRUCTURAL INSPECTION REPORT</h3>' +
+      '<table class="report-meta">' +
+      '<tr><td><strong>DMO:</strong> ' + xmlEsc(proj.dmo || "-") + '</td><td><strong>Estate:</strong> ' + xmlEsc(proj.estate) + '</td></tr>' +
+      '<tr><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td><td><strong>Handover Date:</strong> ' + xmlEsc(proj.handoverDate || "-") + '</td></tr>' +
+      '<tr><td><strong>Reported by SE:</strong> ' + xmlEsc(proj.seName || "-") + '</td><td><strong>Endorsed by SSE:</strong> ' + xmlEsc(proj.sseName || "-") + '</td></tr>' +
+      '<tr><td><strong>Total Elements Inspected:</strong> ' + els.length + '</td><td><strong>SSE Attention (Rating 4–5):</strong> <strong style="color:' + (sseCount ? '#b42318' : '#157a4b') + ';">' + sseCount + '</strong></td></tr>' +
+      '</table>' +
+      (proj.notes ? '<p style="font-size:0.84rem;margin:8px 0;"><strong>Project Notes:</strong> ' + xmlEsc(proj.notes) + '</p>' : '') +
+      '<h4 style="margin:12px 0 6px;font-size:0.92rem;">Summary of Inspected Structural Elements</h4>' +
+      '<table class="report-table"><tr><th>#</th><th>Structural Element & Location</th><th>Max Rating</th><th>Status</th><th>Photos</th><th>5.1 Remarks</th></tr>' +
+      summaryRows + '</table></div>';
+
+    var detailPages = els.map(function (el, i) { return buildElementReportPageHtml(proj, el, "Element #" + (i + 1)); }).join("");
+    $("reportSheet").innerHTML = coverHtml + detailPages;
     $("reportModal").hidden = false;
   }
 
-  /* ---------- Export ZIP (All / Filtered / Single) + Backup JSON Restore ---------- */
+  function openSingleElementReport(elemId) {
+    var el = getElement(elemId);
+    if (!el) return;
+    var proj = getProject(el.projectId);
+    if (!proj) return;
+    $("reportSheet").innerHTML = buildElementReportPageHtml(proj, el, el.name);
+    $("reportModal").hidden = false;
+  }
+
+  /* ---------- Export ZIP & Backup Restore ---------- */
   function downloadBlob(blob, filename) {
     var a = document.createElement("a");
     var href = URL.createObjectURL(blob);
@@ -1432,47 +1407,51 @@
     setTimeout(function () { URL.revokeObjectURL(href); }, 2000);
   }
 
-  async function runZipExport(targetRecords, prefixName) {
+  async function runZipExport(projIdFilter) {
     if (typeof JSZip === "undefined") { toast(t("exportFail")); return; }
-    if (!targetRecords.length) { toast(t("exportEmpty")); return; }
+    var targetProjs = projIdFilter === "all" ? state.projects : state.projects.filter(function (p) { return p.id === projIdFilter; });
+    var targetElems = [];
+    targetProjs.forEach(function (p) { targetElems = targetElems.concat(elementsOf(p.id)); });
+    if (!targetProjs.length) { toast(t("exportEmpty")); return; }
+
     $("exportStatus").textContent = t("exporting");
     try {
       var zip = new JSZip();
-      var header = ["Record ID", "Inspection Date (HKT)", "DMO", "Estate / Site", "Inspected Structure", "Handover Date", "Status", "Max Rating", "SSE Attention"];
+      var header = ["Project ID", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Max Rating", "SSE Attention"];
       ALL_ITEMS.forEach(function (it) { header.push(it.code + " " + it.en); });
-      header.push("4.3 Others Text", "5.1 Remarks", "Current Condition", "External Works", "Reported by SE", "Endorsed by SSE", "Record GPS", "Photo Count");
+      header.push("4.3 Others", "5.1 Remarks", "Condition", "External Works", "Element GPS", "Photo Count");
 
       var recRows = [header];
-      var photoRows = [["Record ID", "Estate / Site", "Photo File", "Taken At (HKT)", "Caption", "Latitude", "Longitude", "GPS Source"]];
-      var backupObj = { version: 2, exportedAt: new Date().toISOString(), records: targetRecords };
+      var photoRows = [["Estate", "Structural Element", "Location", "Photo File", "Taken At (HKT)", "Caption", "Lat", "Lng", "GPS Source"]];
 
-      for (var i = 0; i < targetRecords.length; i++) {
-        var r = targetRecords[i];
-        var photos = state.photosByRecord[r.id] || [];
-        var mr = maxRatingOf(r.ratings);
-        var row = [
-          r.id, fmtHkt(r.createdAt), r.dmo || "", r.siteName || "", r.structure || "", r.handoverDate || "",
-          recordStatusOf(r), mr || "", mr >= 4 ? "YES" : "NO"
-        ];
-        ALL_ITEMS.forEach(function (it) { row.push((r.ratings && r.ratings[it.code]) || ""); });
-        row.push(r.othersText || "", r.remarks || "", r.condition || "", r.externalWorks || "", r.seName || "", r.sseName || "", hasCoords(r.gps) ? fmtCoord(r.gps.lat, r.gps.lng) : "", String(photos.length));
-        recRows.push(row);
+      targetProjs.forEach(function (proj) {
+        var els = elementsOf(proj.id);
+        els.forEach(function (el, idx) {
+          var phs = photosOfElement(el.id);
+          var mr = maxRatingOf(el.ratings);
+          var row = [
+            proj.id, proj.dmo || "", proj.estate, proj.inspectionDate, proj.handoverDate || "", proj.seName || "", proj.sseName || "",
+            String(idx + 1), el.name, el.location || "", elemStatusOf(el), mr || "", mr >= 4 ? "YES" : "NO"
+          ];
+          ALL_ITEMS.forEach(function (it) { row.push((el.ratings && el.ratings[it.code]) || ""); });
+          row.push(el.othersText || "", el.remarks || "", el.condition || "", el.externalWorks || "", hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
+          recRows.push(row);
 
-        photos.forEach(function (p, idx) {
-          var fname = "photos/" + stampHkt(r.createdAt) + "_" + slug(r.siteName) + "_" + String(idx + 1).padStart(2, "0") + ".jpg";
-          if (p.blob) zip.file(fname, p.blob);
-          photoRows.push([r.id, r.siteName || "", fname, fmtHkt(p.takenAt), p.caption || "", p.lat != null ? p.lat : "", p.lng != null ? p.lng : "", p.gpsSource || ""]);
+          phs.forEach(function (p, pi) {
+            var fn = "photos/" + slug(proj.estate) + "/" + String(idx + 1).padStart(2, "0") + "_" + slug(el.name) + "_" + String(pi + 1).padStart(2, "0") + ".jpg";
+            if (p.blob) zip.file(fn, p.blob);
+            photoRows.push([proj.estate, el.name, el.location || "", fn, fmtHkt(p.takenAt), p.caption || "", p.lat != null ? p.lat : "", p.lng != null ? p.lng : "", p.gpsSource || ""]);
+          });
         });
-      }
+      });
 
-      var xlsxBlob = await buildXlsxBlob(recRows);
-      zip.file("inspection_records.xlsx", xlsxBlob);
-      zip.file("inspection_records.csv", buildCsv(recRows));
+      zip.file("inspection_summary.xlsx", await buildXlsxBlob(recRows));
+      zip.file("inspection_summary.csv", buildCsv(recRows));
       zip.file("inspection_photos.csv", buildCsv(photoRows));
-      zip.file("backup.json", JSON.stringify(backupObj, null, 2));
+      zip.file("backup.json", JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), projects: targetProjs, elements: targetElems }, null, 2));
 
-      var out = await zip.generateAsync({ type: "blob" });
-      downloadBlob(out, (prefixName || "Site_Inspection_v2") + "_" + stampHkt() + ".zip");
+      var prefix = targetProjs.length === 1 ? slug(targetProjs[0].estate) + "_" + targetProjs[0].inspectionDate : "Estate_Inspections_v3";
+      downloadBlob(await zip.generateAsync({ type: "blob" }), prefix + "_" + stampHkt() + ".zip");
       $("exportStatus").textContent = t("exportDone");
       toast(t("exportDone"));
     } catch (err) {
@@ -1484,167 +1463,153 @@
 
   async function importJsonBackup(file) {
     try {
-      var text = await file.text();
-      var data = JSON.parse(text);
-      var recs = Array.isArray(data.records) ? data.records : [];
-      if (!recs.length) throw new Error("empty");
-      for (var i = 0; i < recs.length; i++) {
-        if (recs[i] && recs[i].id) {
-          recs[i].isDraft = false;
-          await putRecord(recs[i]);
-        }
-      }
+      var data = JSON.parse(await file.text());
+      var projs = Array.isArray(data.projects) ? data.projects : [];
+      var els = Array.isArray(data.elements) ? data.elements : [];
+      if (!projs.length) throw new Error("empty");
+      for (var i = 0; i < projs.length; i++) await putItem("projects", projs[i]);
+      for (var j = 0; j < els.length; j++) { els[j].isDraft = false; await putItem("elements", els[j]); }
       await reloadData();
-      toast(t("importDone") + recs.length);
-      showTab("records");
-    } catch (e) {
-      toast(t("importFail"));
-    }
+      toast(t("importDone") + projs.length);
+      showTab("projects");
+    } catch (e) { toast(t("importFail")); }
   }
 
   async function refreshStorage() {
     var el = $("storageInfo");
+    var summary = state.projects.length + " projects · " + state.elements.filter(function (e) { return !e.isDraft; }).length + " elements · " + state.photos.length + " photos";
     if (navigator.storage && navigator.storage.estimate) {
       try {
         var est = await navigator.storage.estimate();
-        var mb = ((est.usage || 0) / (1024 * 1024)).toFixed(2);
-        el.textContent = t("storage") + ": " + mb + " MB (" + state.records.filter(function (r) { return !r.isDraft; }).length + " records)";
+        el.textContent = t("storage") + ": " + ((est.usage || 0) / (1024 * 1024)).toFixed(2) + " MB (" + summary + ")";
         return;
       } catch (e) {}
     }
-    el.textContent = t("storageUnknown");
-  }
-
-  async function clearAll() {
-    if (!(await showConfirm(t("confirmClear")))) return;
-    await clearAllData();
-    state.currentId = null;
-    state.isNewUnsaved = false;
-    await reloadData();
-    toast(t("cleared"));
-    showTab("records");
-    refreshStorage();
+    el.textContent = summary;
   }
 
   /* ---------- Event Binding ---------- */
   function bind() {
     document.querySelectorAll(".tab").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var tab = btn.getAttribute("data-tab");
-        if (tab === "edit" && !state.currentId) { startNewRecord(); return; }
-        showTab(tab);
-      });
-    });
-    document.querySelectorAll("#statusFilterBar .chip").forEach(function (chip) {
-      chip.addEventListener("click", function () {
-        state.filterStatus = chip.getAttribute("data-filter");
-        document.querySelectorAll("#statusFilterBar .chip").forEach(function (c) { c.classList.toggle("is-active", c === chip); });
-        renderRecords();
-      });
+      btn.addEventListener("click", function () { showTab(btn.getAttribute("data-tab")); });
     });
     $("btnLang").addEventListener("click", function () {
       state.lang = state.lang === "zh" ? "en" : "zh";
       try { localStorage.setItem(LANG_KEY, state.lang); } catch (e) {}
       applyLang();
-      if (state.tab === "records") renderRecords();
+      if (state.tab === "projects") renderProjects();
+      if (state.tab === "projectDetail") renderProjectDetail();
       if (state.tab === "album") renderAlbum();
       if (state.tab === "map") renderMap();
     });
-    $("searchInput").addEventListener("input", renderRecords);
-    $("btnNewFromList").addEventListener("click", startNewRecord);
-    $("recordForm").addEventListener("submit", function (e) { e.preventDefault(); saveCurrent(); });
-    $("btnCancel").addEventListener("click", cancelEdit);
-    $("btnDelete").addEventListener("click", deleteCurrent);
-    $("btnPrintReport").addEventListener("click", openReportPreview);
-    $("btnCloseReport").addEventListener("click", function () { $("reportModal").hidden = true; });
-    $("btnReportClose2").addEventListener("click", function () { $("reportModal").hidden = true; });
-    $("btnReportPrintNow").addEventListener("click", function () { window.print(); });
+    $("searchProjInput").addEventListener("input", renderProjects);
+    $("btnNewProject").addEventListener("click", function () { openProjectModal(null); });
+    $("btnEditProject").addEventListener("click", function () { openProjectModal(getProject(state.currentProjectId)); });
+    $("btnProjCancel").addEventListener("click", function () { $("projectModal").hidden = true; });
+    $("projectForm").addEventListener("submit", function (e) { e.preventDefault(); saveProjectForm(); });
+    $("btnBackToProjects").addEventListener("click", function () { showTab("projects"); });
+    $("btnBackToProject").addEventListener("click", function () { showTab("projectDetail"); });
+    $("btnAddElement").addEventListener("click", startNewElement);
+    $("btnProjectReport").addEventListener("click", function () { openProjectReport(state.currentProjectId); });
+    $("btnProjectZip").addEventListener("click", function () { runZipExport(state.currentProjectId); });
+    $("btnDeleteProject").addEventListener("click", async function () {
+      if (!state.currentProjectId || !(await showConfirm(t("confirmDelProj")))) return;
+      await deleteProjectCascade(state.currentProjectId);
+      state.currentProjectId = null; state.currentElementId = null;
+      await reloadData(); toast(t("deleted")); showTab("projects");
+    });
+
+    $("searchElemInput").addEventListener("input", renderProjectDetail);
+    document.querySelectorAll("#statusFilterBar .chip").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        state.filterStatus = chip.getAttribute("data-filter");
+        document.querySelectorAll("#statusFilterBar .chip").forEach(function (c) { c.classList.toggle("is-active", c === chip); });
+        renderProjectDetail();
+      });
+    });
+
+    $("elementForm").addEventListener("submit", function (e) { e.preventDefault(); saveElementForm(); });
+    $("btnCancelElem").addEventListener("click", async function () {
+      await cleanupEmptyElementDraft();
+      state.currentElementId = null; state.isNewElementUnsaved = false;
+      showTab("projectDetail");
+    });
+    $("btnDeleteElem").addEventListener("click", async function () {
+      if (!state.currentElementId || !(await showConfirm(t("confirmDelElem")))) return;
+      await deleteElementCascade(state.currentElementId);
+      state.currentElementId = null; state.isNewElementUnsaved = false;
+      await reloadData(); toast(t("deleted")); showTab("projectDetail");
+    });
+    $("btnElemReport").addEventListener("click", function () { openSingleElementReport(state.currentElementId); });
+    $("btnFillNa").addEventListener("click", function () {
+      ALL_ITEMS.forEach(function (it) { if (!state.currentRatings[it.code]) state.currentRatings[it.code] = "N.A."; });
+      updateChecklistSelection();
+    });
+    $("btnClearRatings").addEventListener("click", function () { state.currentRatings = {}; updateChecklistSelection(); });
     $("btnRefreshGps").addEventListener("click", async function () {
-      $("recGpsText").textContent = t("gpsLoading");
+      $("elemGpsText").textContent = t("gpsLoading");
       var gps = await getDeviceGps();
-      if (hasCoords(gps)) { state.currentGps = gps; toast(t("hasCoords")); }
-      else toast(t("noCoords"));
-      updateRecGpsText();
+      if (hasCoords(gps)) { state.currentGps = gps; toast(t("hasCoords")); } else toast(t("noCoords"));
+      updateElemGpsText();
     });
     $("btnPickMapLoc").addEventListener("click", openMapPicker);
     $("btnPickerCancel").addEventListener("click", function () { $("pickerModal").hidden = true; });
     $("btnPickerApply").addEventListener("click", function () {
       if (state.pickerLatLng) {
         state.currentGps = { lat: state.pickerLatLng.lat, lng: state.pickerLatLng.lng, accuracy: null, source: "manual" };
-        updateRecGpsText();
-        toast(t("hasCoords"));
+        updateElemGpsText(); toast(t("hasCoords"));
       }
       $("pickerModal").hidden = true;
-    });
-    $("btnFillNa").addEventListener("click", function () {
-      ALL_ITEMS.forEach(function (it) { if (!state.currentRatings[it.code]) state.currentRatings[it.code] = "N.A."; });
-      updateChecklistSelection();
-    });
-    $("btnClearRatings").addEventListener("click", function () {
-      state.currentRatings = {};
-      updateChecklistSelection();
     });
     $("btnTakePhoto").addEventListener("click", function () { $("fileCamera").value = ""; $("fileCamera").click(); });
     $("btnPickPhoto").addEventListener("click", function () { $("fileLibrary").value = ""; $("fileLibrary").click(); });
     $("fileCamera").addEventListener("change", function (e) { addPhotoFiles(e.target.files, true); });
     $("fileLibrary").addEventListener("change", function (e) { addPhotoFiles(e.target.files, false); });
-    $("btnExportSingle").addEventListener("click", async function () {
-      if (!state.currentId) return;
-      var rec = await getRecord(state.currentId);
-      if (rec) runZipExport([rec], "Inspection_" + slug(rec.siteName));
-    });
-    $("btnExport").addEventListener("click", function () {
-      var from = $("exportFrom").value, to = $("exportTo").value;
-      var list = state.records.filter(function (r) {
-        if (r.isDraft) return false;
-        var ymd = fmtDateYmd(r.createdAt);
-        if (from && ymd < from) return false;
-        if (to && ymd > to) return false;
-        return true;
-      });
-      runZipExport(list, "Site_Inspection_v2");
-    });
-    $("btnImportBackup").addEventListener("click", function () { $("fileImportBackup").value = ""; $("fileImportBackup").click(); });
-    $("fileImportBackup").addEventListener("change", function (e) {
-      if (e.target.files && e.target.files[0]) importJsonBackup(e.target.files[0]);
-    });
-    $("btnClearAll").addEventListener("click", clearAll);
-    $("btnCloseLightbox").addEventListener("click", closeLightbox);
-    $("lightbox").addEventListener("click", function (e) { if (e.target === $("lightbox")) closeLightbox(); });
+
+    $("albumProjectFilter").addEventListener("change", renderAlbum);
+    $("mapProjectFilter").addEventListener("change", renderMap);
     $("btnToggleBasemap").addEventListener("click", function () {
       state.basemap = state.basemap === "arcgis" ? "osm" : "arcgis";
       try { localStorage.setItem(BASEMAP_KEY, state.basemap); } catch (e) {}
       $("btnToggleBasemap").textContent = state.basemap === "arcgis" ? t("basemapArcgis") : t("basemapOsm");
-      if (state.map && state.tileLayer) {
-        state.map.removeLayer(state.tileLayer);
-        state.tileLayer = createBasemapLayer().addTo(state.map);
-      }
+      if (state.map && state.tileLayer) { state.map.removeLayer(state.tileLayer); state.tileLayer = createBasemapLayer().addTo(state.map); }
     });
+
+    $("btnExportZip").addEventListener("click", function () { runZipExport($("exportProjectSelect").value || "all"); });
+    $("btnImportBackup").addEventListener("click", function () { $("fileImportBackup").value = ""; $("fileImportBackup").click(); });
+    $("fileImportBackup").addEventListener("change", function (e) { if (e.target.files && e.target.files[0]) importJsonBackup(e.target.files[0]); });
+    $("btnClearAll").addEventListener("click", async function () {
+      if (!(await showConfirm(t("confirmClear")))) return;
+      await clearAllData();
+      state.currentProjectId = null; state.currentElementId = null;
+      await reloadData(); toast(t("cleared")); showTab("projects"); refreshStorage();
+    });
+
+    $("btnCloseReport").addEventListener("click", function () { $("reportModal").hidden = true; });
+    $("btnReportClose2").addEventListener("click", function () { $("reportModal").hidden = true; });
+    $("btnReportPrintNow").addEventListener("click", function () { window.print(); });
+    $("btnCloseLightbox").addEventListener("click", function () { $("lightbox").hidden = true; $("lightboxImg").removeAttribute("src"); });
+    $("lightbox").addEventListener("click", function (e) { if (e.target === $("lightbox")) { $("lightbox").hidden = true; $("lightboxImg").removeAttribute("src"); } });
     window.addEventListener("online", updateConnBadge);
     window.addEventListener("offline", updateConnBadge);
   }
 
   async function init() {
     try {
-      var savedLang = localStorage.getItem(LANG_KEY);
-      if (savedLang === "en" || savedLang === "zh") state.lang = savedLang;
-      var savedBm = localStorage.getItem(BASEMAP_KEY);
-      if (savedBm === "osm" || savedBm === "arcgis") state.basemap = savedBm;
+      var sl = localStorage.getItem(LANG_KEY); if (sl === "en" || sl === "zh") state.lang = sl;
+      var sb = localStorage.getItem(BASEMAP_KEY); if (sb === "osm" || sb === "arcgis") state.basemap = sb;
     } catch (e) {}
     bind();
     applyLang();
     await reloadData();
-    // Clean up any stray empty drafts from older sessions
-    for (var i = 0; i < state.records.length; i++) {
-      var r = state.records[i];
-      if (r.isDraft && !(state.photosByRecord[r.id] || []).length && !r.siteName) {
-        await deleteRecordAndPhotos(r.id);
-      }
+    for (var i = 0; i < state.elements.length; i++) {
+      var e = state.elements[i];
+      if (e.isDraft && !photosOfElement(e.id).length && !e.name) await deleteElementCascade(e.id);
     }
     await reloadData();
-    renderRecords();
+    populateProjectDropdowns();
+    renderProjects();
     registerPwa();
   }
-
   init();
 })();
