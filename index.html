@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1B3A4B">
+  <meta name="color-scheme" content="light">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="地盤巡查">
+  <meta name="description" content="Offline iPad structural & site inspection (HD Appendix X). Records and photos stay on this device.">
+  <title>地盤巡查 Site Inspection v2</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icons/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="./vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <img class="brand-icon" src="./icons/icon-192.png" width="36" height="36" alt="">
+        <div>
+          <h1><span id="appTitle">地盤巡查</span> <span class="ver-pill">v2.0</span></h1>
+          <p class="tagline" id="appTagline">離線 iPad 結構巡查（HD Appendix X）· 資料只存本機</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <span id="connBadge" class="badge badge-net" hidden></span>
+        <button type="button" id="btnLang" class="btn btn-ghost btn-sm" aria-label="Switch language">EN</button>
+      </div>
+    </header>
+
+    <div id="modeBanner" class="banner" hidden></div>
+
+    <nav class="tabs" role="tablist" aria-label="Main">
+      <button type="button" class="tab is-active" data-tab="records" role="tab" aria-selected="true" id="tab-records"></button>
+      <button type="button" class="tab" data-tab="edit" role="tab" aria-selected="false" id="tab-edit"></button>
+      <button type="button" class="tab" data-tab="album" role="tab" aria-selected="false" id="tab-album"></button>
+      <button type="button" class="tab" data-tab="map" role="tab" aria-selected="false" id="tab-map"></button>
+      <button type="button" class="tab" data-tab="export" role="tab" aria-selected="false" id="tab-export"></button>
+    </nav>
+
+    <main>
+      <!-- RECORDS LIST -->
+      <section id="view-records" class="view is-active" role="tabpanel">
+        <div class="toolbar">
+          <label class="search-wrap">
+            <span class="sr-only" id="lblSearch">搜尋</span>
+            <input type="search" id="searchInput" autocomplete="off">
+          </label>
+          <button type="button" id="btnNewFromList" class="btn btn-primary"></button>
+        </div>
+        <div class="filter-bar" id="statusFilterBar">
+          <button type="button" class="chip is-active" data-filter="all" id="fltAll"></button>
+          <button type="button" class="chip" data-filter="sse" id="fltSse"></button>
+          <button type="button" class="chip" data-filter="followup" id="fltFollowup"></button>
+          <button type="button" class="chip" data-filter="normal" id="fltNormal"></button>
+        </div>
+        <p id="recordsEmpty" class="empty" hidden></p>
+        <div id="recordsList" class="card-list"></div>
+      </section>
+
+      <!-- NEW / EDIT RECORD -->
+      <section id="view-edit" class="view" role="tabpanel" hidden>
+        <form id="recordForm" autocomplete="off">
+          <input type="hidden" id="fieldId">
+
+          <!-- Panel 1: Basic & Appendix X Header -->
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="secHeaderTitle"></h2>
+              <button type="button" id="btnPrintReport" class="btn btn-secondary btn-sm" hidden></button>
+            </div>
+            <div class="form-grid">
+              <label class="field">
+                <span id="lblWhen"></span>
+                <input type="text" id="fieldWhen" readonly>
+              </label>
+              <label class="field">
+                <span id="lblDmo"></span>
+                <input type="text" id="fieldDmo" maxlength="40" placeholder="e.g. DMO/KWT">
+              </label>
+              <label class="field">
+                <span id="lblSite"></span>
+                <input type="text" id="fieldSite" required maxlength="200">
+              </label>
+              <label class="field">
+                <span id="lblStructure"></span>
+                <input type="text" id="fieldStructure" list="structurePresets" maxlength="160">
+                <datalist id="structurePresets">
+                  <option value="Canopy">
+                  <option value="Columns / Beams / Slabs">
+                  <option value="Staircase">
+                  <option value="Cantilevered Projecting Structure">
+                  <option value="Transfer Structure">
+                  <option value="Suspended Manhole">
+                  <option value="Protective Barriers / Railing Parapets">
+                  <option value="Screen Wall / Basement Wall">
+                  <option value="Retaining Wall">
+                  <option value="Hanging Structure">
+                  <option value="Exposed Pile Cap">
+                </datalist>
+              </label>
+              <label class="field">
+                <span id="lblHandover"></span>
+                <input type="text" id="fieldHandover" maxlength="20" placeholder="mm/yyyy">
+              </label>
+              <label class="field">
+                <span id="lblStatus"></span>
+                <select id="fieldStatus">
+                  <option value="normal"></option>
+                  <option value="followup"></option>
+                  <option value="sse"></option>
+                </select>
+              </label>
+            </div>
+
+            <div class="loc-bar">
+              <div><strong id="lblRecGps"></strong> <span id="recGpsText">-</span></div>
+              <div class="loc-bar-actions">
+                <button type="button" id="btnRefreshGps" class="btn btn-secondary btn-sm"></button>
+                <button type="button" id="btnPickMapLoc" class="btn btn-secondary btn-sm"></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Panel 2: HD Appendix X Structural Checklist -->
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="secChecklistTitle"></h2>
+              <div class="photo-actions">
+                <button type="button" id="btnFillNa" class="btn btn-ghost btn-sm"></button>
+                <button type="button" id="btnClearRatings" class="btn btn-ghost btn-sm"></button>
+              </div>
+            </div>
+            <p class="hint" id="checklistHint"></p>
+            <div id="checklistContainer"></div>
+            <div id="sseAlertBanner" class="sse-alert" hidden></div>
+          </div>
+
+          <!-- Panel 3: Remarks, Condition & Sign-off -->
+          <div class="panel">
+            <div class="panel-head">
+              <h2 id="secRemarksTitle"></h2>
+            </div>
+            <div class="form-grid">
+              <label class="field field-span">
+                <span id="lblRemarks"></span>
+                <textarea id="fieldRemarks" rows="3" maxlength="4000"></textarea>
+              </label>
+              <label class="field field-span">
+                <span id="lblCondition"></span>
+                <textarea id="fieldCondition" rows="2" maxlength="4000"></textarea>
+              </label>
+              <label class="field field-span">
+                <span id="lblWorks"></span>
+                <textarea id="fieldWorks" rows="2" maxlength="4000"></textarea>
+              </label>
+              <label class="field">
+                <span id="lblSeName"></span>
+                <input type="text" id="fieldSeName" maxlength="100">
+              </label>
+              <label class="field">
+                <span id="lblSseName"></span>
+                <input type="text" id="fieldSseName" maxlength="100">
+              </label>
+            </div>
+          </div>
+
+          <!-- Panel 4: Photos -->
+          <div class="panel">
+            <div class="photo-head">
+              <h2 id="lblPhotos"></h2>
+              <div class="photo-actions">
+                <button type="button" id="btnTakePhoto" class="btn btn-primary btn-sm"></button>
+                <button type="button" id="btnPickPhoto" class="btn btn-secondary btn-sm"></button>
+              </div>
+            </div>
+            <input type="file" id="fileCamera" accept="image/*" capture="environment" hidden>
+            <input type="file" id="fileLibrary" accept="image/*" multiple hidden>
+            <p id="photoHint" class="hint"></p>
+            <div id="photoGrid" class="photo-grid"></div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" id="btnSave" class="btn btn-primary"></button>
+            <button type="button" id="btnExportSingle" class="btn btn-secondary" hidden></button>
+            <button type="button" id="btnCancel" class="btn btn-ghost"></button>
+            <button type="button" id="btnDelete" class="btn btn-danger" hidden></button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ALBUM -->
+      <section id="view-album" class="view" role="tabpanel" hidden>
+        <p id="albumEmpty" class="empty" hidden></p>
+        <div id="albumGrid" class="album-grid"></div>
+      </section>
+
+      <!-- MAP -->
+      <section id="view-map" class="view view-map" role="tabpanel" hidden>
+        <div class="map-toolbar">
+          <p id="mapHint" class="hint" style="margin:0"></p>
+          <button type="button" id="btnToggleBasemap" class="btn btn-secondary btn-sm"></button>
+        </div>
+        <div id="mapOffline" class="map-offline" hidden></div>
+        <div id="mapCanvas" class="map-canvas"></div>
+      </section>
+
+      <!-- EXPORT & BACKUP -->
+      <section id="view-export" class="view" role="tabpanel" hidden>
+        <div class="panel">
+          <h2 id="exportTitle"></h2>
+          <p id="exportBlurb" class="lead"></p>
+          <div class="form-grid" style="max-width:520px;margin-bottom:12px;">
+            <label class="field">
+              <span id="lblDateFrom"></span>
+              <input type="date" id="exportFrom">
+            </label>
+            <label class="field">
+              <span id="lblDateTo"></span>
+              <input type="date" id="exportTo">
+            </label>
+          </div>
+          <p id="storageInfo" class="hint"></p>
+          <div class="form-actions">
+            <button type="button" id="btnExport" class="btn btn-primary"></button>
+            <button type="button" id="btnImportBackup" class="btn btn-secondary"></button>
+            <input type="file" id="fileImportBackup" accept=".json,application/json" hidden>
+          </div>
+          <p id="exportStatus" class="hint" aria-live="polite"></p>
+        </div>
+        <div class="panel">
+          <h2 id="privacyTitle"></h2>
+          <p id="privacyBlurb" class="lead"></p>
+          <button type="button" id="btnClearAll" class="btn btn-danger"></button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox" hidden>
+    <button type="button" id="btnCloseLightbox" class="btn btn-ghost lightbox-close">×</button>
+    <img id="lightboxImg" alt="">
+    <p id="lightboxCap"></p>
+  </div>
+
+  <!-- Confirm Modal -->
+  <div id="confirmModal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+    <div class="modal-dialog">
+      <p id="confirmMsg"></p>
+      <div class="modal-actions">
+        <button type="button" id="btnConfirmCancel" class="btn btn-ghost btn-sm"></button>
+        <button type="button" id="btnConfirmOk" class="btn btn-danger btn-sm"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map Location Picker Modal -->
+  <div id="pickerModal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-dialog-wide">
+      <h2 id="pickerTitle" style="font-size:1.05rem;margin-bottom:4px;"></h2>
+      <p id="pickerHint" class="hint" style="margin:0 0 8px;"></p>
+      <div id="pickerMap"></div>
+      <div class="modal-actions">
+        <button type="button" id="btnPickerCancel" class="btn btn-ghost btn-sm"></button>
+        <button type="button" id="btnPickerApply" class="btn btn-primary btn-sm"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Printable Appendix X Report Modal -->
+  <div id="reportModal" class="modal-overlay" hidden role="dialog" aria-modal="true">
+    <div class="modal-dialog modal-dialog-wide">
+      <div class="panel-head no-print">
+        <h2 id="reportModalTitle"></h2>
+        <button type="button" id="btnCloseReport" class="btn btn-ghost btn-sm">×</button>
+      </div>
+      <div id="reportSheet" class="report-sheet"></div>
+      <div class="modal-actions no-print">
+        <button type="button" id="btnReportPrintNow" class="btn btn-primary btn-sm"></button>
+        <button type="button" id="btnReportClose2" class="btn btn-ghost btn-sm"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
+
+  <noscript>
+    <p style="padding:1.5rem;font-family:sans-serif">This app needs JavaScript. 呢個 App 需要啟用 JavaScript。</p>
+  </noscript>
+
+  <script src="./vendor/jszip.min.js"></script>
+  <script src="./vendor/leaflet/leaflet.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "id": "./",
+  "name": "地盤巡查 Site Inspection v2",
+  "short_name": "地盤巡查",
+  "description": "Offline iPad structural & site inspection (HD Appendix X). Data stays on this device.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#1B3A4B",
+  "theme_color": "#1B3A4B",
+  "lang": "zh-HK",
+  "dir": "ltr",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
