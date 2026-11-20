@@ -434,3 +434,19 @@ body.layout-phone.is-forced-phone #app {
 body.layout-phone.is-forced-phone .tabs {
   max-width: 430px; left: 50%; transform: translateX(-50%);
 }
+
+/* v3.3 Export Options Grid */
+.export-opts {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
+  gap: 10px; margin: 12px 0 14px;
+}
+.exp-opt {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 12px 14px; border: 1.5px solid var(--line); border-radius: 12px;
+  background: #fafcfd; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+}
+.exp-opt:has(input:checked) { border-color: var(--teal); background: #edf8f6; }
+.exp-opt input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--teal); flex: none; }
+.exp-opt strong { display: block; font-size: 0.9rem; color: var(--navy); }
+.exp-opt small { display: block; font-size: 0.76rem; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+.exp-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }

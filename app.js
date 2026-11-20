@@ -151,7 +151,18 @@
       exportTitle: "匯出 ZIP 與備份還原",
       exportBlurb: "可揀單一屋邨專案或全部專案匯出 ZIP（包含 Excel 總表、CSV、JSON 備份及按構建物命名嘅相片）。",
       lblExportProj: "選擇匯出範圍",
-      exportZipBtn: "匯出 ZIP",
+      exportZipBtn: "匯出所選檔案",
+      prePdfOnly: "只出 PDF",
+      preExcelOnly: "只出 Excel",
+      preBackupOnly: "只出 Data Backup",
+      preBothAll: "全部（PDF + Excel + Backup）",
+      lblExpPdf: "PDF 巡查報告",
+      descExpPdf: "第 1 版 Summary + SE/SSE 簽名位，其後每頁詳列各構建物及相片",
+      lblExpExcel: "Excel 報表 (.xlsx)",
+      descExpExcel: "包含所有屋邨、構建物 1.1–4.3 評級及 Remarks 總表",
+      lblExpBackup: "Data Backup (.json + 相片)",
+      descExpBackup: "可還原嘅完整專案備份（連同相片打包成 ZIP）",
+      needExportPick: "請最少剔選一項匯出格式。",
       importBtn: "匯入 JSON 備份還原",
       importDone: "還原完成！匯入專案數：",
       importFail: "無法讀取備份檔，請確認係 v3 匯出嘅 backup.json。",
@@ -276,7 +287,18 @@
       exportTitle: "Export ZIP & Backup Restore",
       exportBlurb: "Export a single Estate Project or all projects as ZIP (Excel summary, CSVs, JSON backup, and photos organized by element).",
       lblExportProj: "Export Scope",
-      exportZipBtn: "Export ZIP",
+      exportZipBtn: "Export Selected",
+      prePdfOnly: "PDF Only",
+      preExcelOnly: "Excel Only",
+      preBackupOnly: "Data Backup Only",
+      preBothAll: "All (PDF + Excel + Backup)",
+      lblExpPdf: "PDF Inspection Report",
+      descExpPdf: "Page 1 Summary + SE/SSE Signatures, followed by Element pages & photos",
+      lblExpExcel: "Excel Workbook (.xlsx)",
+      descExpExcel: "Full table of Estate, Elements, 1.1–4.3 ratings & Remarks",
+      lblExpBackup: "Data Backup (.json + Photos)",
+      descExpBackup: "Restorable JSON backup (bundled with photos in ZIP)",
+      needExportPick: "Please select at least one export format.",
       importBtn: "Restore JSON Backup",
       importDone: "Restored projects: ",
       importFail: "Could not read backup file. Please choose a v3 backup.json.",
@@ -706,7 +728,7 @@
   function applyLang() {
     var p = I18N[state.lang];
     document.documentElement.lang = p.htmlLang;
-    document.title = p.title + " v3.2";
+    document.title = p.title + " v3.3";
     $("appTitle").textContent = p.title;
     $("appTagline").textContent = p.tagline;
     $("btnLang").textContent = p.langBtn;
@@ -773,7 +795,17 @@
     $("exportTitle").textContent = p.exportTitle;
     $("exportBlurb").textContent = p.exportBlurb;
     $("lblExportProj").textContent = p.lblExportProj;
-    $("btnExportZip").textContent = p.exportZipBtn;
+    $("btnExportSelected").textContent = p.exportZipBtn;
+    $("prePdfOnly").textContent = p.prePdfOnly;
+    $("preExcelOnly").textContent = p.preExcelOnly;
+    $("preBackupOnly").textContent = p.preBackupOnly;
+    $("preBothAll").textContent = p.preBothAll;
+    $("lblExpPdf").textContent = p.lblExpPdf;
+    $("descExpPdf").textContent = p.descExpPdf;
+    $("lblExpExcel").textContent = p.lblExpExcel;
+    $("descExpExcel").textContent = p.descExpExcel;
+    $("lblExpBackup").textContent = p.lblExpBackup;
+    $("descExpBackup").textContent = p.descExpBackup;
     $("btnImportBackup").textContent = p.importBtn;
     $("privacyTitle").textContent = p.privacyTitle;
     $("privacyBlurb").textContent = p.privacyBlurb;
@@ -1362,7 +1394,7 @@
   }
 
   /* ---------- Report Builder (Full Estate Report & Single Element Appendix X) ---------- */
-  function buildElementReportPageHtml(proj, el, idxLabel) {
+  function buildElementReportPageHtml(proj, el, idxLabel, includeSignoff) {
     var photos = photosOfElement(el.id);
     var ratings = el.ratings || {};
     var rowsHtml = "";
@@ -1396,10 +1428,12 @@
       (el.condition ? '<br><em>Condition:</em> ' + xmlEsc(el.condition) : '') +
       (el.externalWorks ? '<br><em>External Works:</em> ' + xmlEsc(el.externalWorks) : '') + '</td></tr>' +
       '</table>' +
-      '<table class="report-meta" style="margin-top:10px;">' +
-      '<tr><td><strong>Reported by SE:</strong> ' + xmlEsc(proj.seName || "________________") + '<br><br>Signature: ________________ &nbsp; Date: ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td>' +
-      '<td><strong>Endorsed by SSE:</strong> ' + xmlEsc(proj.sseName || "________________") + '<br><br>Signature: ________________ &nbsp; Date: ____________</td></tr>' +
-      '</table>' + photosHtml + '</div>';
+      (includeSignoff ? (
+        '<table class="report-meta" style="margin-top:10px;">' +
+        '<tr><td><strong>Reported by SE:</strong> ' + xmlEsc(proj.seName || "________________") + '<br><br>Signature: ________________ &nbsp; Date: ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td>' +
+        '<td><strong>Endorsed by SSE:</strong> ' + xmlEsc(proj.sseName || "________________") + '<br><br>Signature: ________________ &nbsp; Date: ____________</td></tr>' +
+        '</table>'
+      ) : '') + photosHtml + '</div>';
   }
 
   function openProjectReport(projId) {
@@ -1420,20 +1454,24 @@
     }).join("");
 
     var coverHtml = '<div class="report-page">' +
+      '<div style="text-align:right;font-size:0.78rem;">Page 1 — Summary Report (Appendix X)</div>' +
       '<h3>HOUSING DEPARTMENT — ESTATE MANAGEMENT DIVISION</h3>' +
-      '<h3 style="font-size:1.15rem;margin:6px 0 12px;">ESTATE STRUCTURAL INSPECTION REPORT</h3>' +
+      '<h3 style="font-size:1.12rem;margin:4px 0 10px;">SUMMARY REPORT OF STRUCTURAL INSPECTION</h3>' +
       '<table class="report-meta">' +
       '<tr><td><strong>RMO / DMO:</strong> ' + xmlEsc((proj.rmo ? proj.rmo + " · " : "") + (proj.dmo || "-")) + '</td><td><strong>Estate:</strong> ' + xmlEsc(proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "")) + '</td></tr>' +
       '<tr><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td><td><strong>Handover Date:</strong> ' + xmlEsc(proj.handoverDate || "-") + '</td></tr>' +
-      '<tr><td><strong>Reported by SE:</strong> ' + xmlEsc(proj.seName || "-") + '</td><td><strong>Endorsed by SSE:</strong> ' + xmlEsc(proj.sseName || "-") + '</td></tr>' +
       '<tr><td><strong>Total Elements Inspected:</strong> ' + els.length + '</td><td><strong>SSE Attention (Rating 4–5):</strong> <strong style="color:' + (sseCount ? '#b42318' : '#157a4b') + ';">' + sseCount + '</strong></td></tr>' +
       '</table>' +
-      (proj.notes ? '<p style="font-size:0.84rem;margin:8px 0;"><strong>Project Notes:</strong> ' + xmlEsc(proj.notes) + '</p>' : '') +
-      '<h4 style="margin:12px 0 6px;font-size:0.92rem;">Summary of Inspected Structural Elements</h4>' +
+      (proj.notes ? '<p style="font-size:0.84rem;margin:6px 0;"><strong>Project Notes:</strong> ' + xmlEsc(proj.notes) + '</p>' : '') +
+      '<h4 style="margin:10px 0 6px;font-size:0.9rem;">Summary of Inspected Structural Elements</h4>' +
       '<table class="report-table"><tr><th>#</th><th>Structural Element & Location</th><th>Max Rating</th><th>Status</th><th>Photos</th><th>5.1 Remarks</th></tr>' +
-      summaryRows + '</table></div>';
+      summaryRows + '</table>' +
+      '<table class="report-meta" style="margin-top:16px;">' +
+      '<tr><td style="width:50%;"><strong>Reported by SE:</strong><br><br>Signature: _______________________<br><br>Name: ' + xmlEsc(proj.seName || "_______________________") + '<br>Date: ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td>' +
+      '<td style="width:50%;"><strong>Endorsed by SSE:</strong><br><br>Signature: _______________________<br><br>Name: ' + xmlEsc(proj.sseName || "_______________________") + '<br>Date: _______________________</td></tr>' +
+      '</table></div>';
 
-    var detailPages = els.map(function (el, i) { return buildElementReportPageHtml(proj, el, "Element #" + (i + 1)); }).join("");
+    var detailPages = els.map(function (el, i) { return buildElementReportPageHtml(proj, el, "Element #" + (i + 1), false); }).join("");
     $("reportSheet").innerHTML = coverHtml + detailPages;
     $("reportModal").hidden = false;
   }
@@ -1443,7 +1481,7 @@
     if (!el) return;
     var proj = getProject(el.projectId);
     if (!proj) return;
-    $("reportSheet").innerHTML = buildElementReportPageHtml(proj, el, el.name);
+    $("reportSheet").innerHTML = buildElementReportPageHtml(proj, el, el.name, true);
     $("reportModal").hidden = false;
   }
 
@@ -1454,6 +1492,107 @@
     a.href = href; a.download = filename;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function () { URL.revokeObjectURL(href); }, 2000);
+  }
+
+
+  function buildExportRows(targetProjs) {
+    var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Max Rating", "SSE Attention"];
+    ALL_ITEMS.forEach(function (it) { header.push(it.code + " " + it.en); });
+    header.push("4.3 Others", "5.1 Remarks", "Condition", "External Works", "Element GPS", "Photo Count");
+    var recRows = [header];
+    var photoRows = [["Estate", "Structural Element", "Location", "Photo File", "Taken At (HKT)", "Caption", "Lat", "Lng", "GPS Source"]];
+    targetProjs.forEach(function (proj) {
+      elementsOf(proj.id).forEach(function (el, idx) {
+        var phs = photosOfElement(el.id);
+        var mr = maxRatingOf(el.ratings);
+        var row = [
+          proj.id, proj.rmo || "", proj.dmo || "", proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : ""),
+          proj.inspectionDate, proj.handoverDate || "", proj.seName || "", proj.sseName || "",
+          String(idx + 1), el.name, el.location || "", elemStatusOf(el), mr || "", mr >= 4 ? "YES" : "NO"
+        ];
+        ALL_ITEMS.forEach(function (it) { row.push((el.ratings && el.ratings[it.code]) || ""); });
+        row.push(el.othersText || "", el.remarks || "", el.condition || "", el.externalWorks || "", hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
+        recRows.push(row);
+        phs.forEach(function (p, pi) {
+          var fn = "photos/" + slug(proj.estate) + "/" + String(idx + 1).padStart(2, "0") + "_" + slug(el.name) + "_" + String(pi + 1).padStart(2, "0") + ".jpg";
+          photoRows.push([proj.estate, el.name, el.location || "", fn, fmtHkt(p.takenAt), p.caption || "", p.lat != null ? p.lat : "", p.lng != null ? p.lng : "", p.gpsSource || ""]);
+        });
+      });
+    });
+    return { recRows: recRows, photoRows: photoRows };
+  }
+
+  function openMultiProjectReport(targetProjs) {
+    var pages = [];
+    targetProjs.forEach(function (proj) {
+      var els = elementsOf(proj.id);
+      if (!els.length) return;
+      var sseCount = els.filter(function (e) { return hasSevereRating(e.ratings) || elemStatusOf(e) === "sse"; }).length;
+      var summaryRows = els.map(function (el, i) {
+        var mr = maxRatingOf(el.ratings);
+        return '<tr><td>' + (i + 1) + '</td><td><strong>' + xmlEsc(el.name) + '</strong>' + (el.location ? '<br><small>' + xmlEsc(el.location) + '</small>' : '') + '</td>' +
+          '<td style="text-align:center;">' + (mr || "-") + '</td>' +
+          '<td style="text-align:center;">' + (mr >= 4 ? '<strong style="color:#b42318;">SSE Attention</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
+          '<td style="text-align:center;">' + photosOfElement(el.id).length + '</td>' +
+          '<td>' + xmlEsc(el.remarks || "-") + '</td></tr>';
+      }).join("");
+      pages.push('<div class="report-page">' +
+        '<div style="text-align:right;font-size:0.78rem;">Page 1 — Summary Report (Appendix X)</div>' +
+        '<h3>HOUSING DEPARTMENT — ESTATE MANAGEMENT DIVISION</h3>' +
+        '<h3 style="font-size:1.12rem;margin:4px 0 10px;">SUMMARY REPORT OF STRUCTURAL INSPECTION</h3>' +
+        '<table class="report-meta">' +
+        '<tr><td><strong>RMO / DMO:</strong> ' + xmlEsc((proj.rmo ? proj.rmo + " · " : "") + (proj.dmo || "-")) + '</td><td><strong>Estate:</strong> ' + xmlEsc(proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "")) + '</td></tr>' +
+        '<tr><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td><td><strong>Handover Date:</strong> ' + xmlEsc(proj.handoverDate || "-") + '</td></tr>' +
+        '<tr><td><strong>Total Elements Inspected:</strong> ' + els.length + '</td><td><strong>SSE Attention (Rating 4–5):</strong> <strong style="color:' + (sseCount ? '#b42318' : '#157a4b') + ';">' + sseCount + '</strong></td></tr>' +
+        '</table>' +
+        (proj.notes ? '<p style="font-size:0.84rem;margin:6px 0;"><strong>Project Notes:</strong> ' + xmlEsc(proj.notes) + '</p>' : '') +
+        '<h4 style="margin:10px 0 6px;font-size:0.9rem;">Summary of Inspected Structural Elements</h4>' +
+        '<table class="report-table"><tr><th>#</th><th>Structural Element & Location</th><th>Max Rating</th><th>Status</th><th>Photos</th><th>5.1 Remarks</th></tr>' +
+        summaryRows + '</table>' +
+        '<table class="report-meta" style="margin-top:16px;">' +
+        '<tr><td style="width:50%;"><strong>Reported by SE:</strong><br><br>Signature: _______________________<br><br>Name: ' + xmlEsc(proj.seName || "_______________________") + '<br>Date: ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td>' +
+        '<td style="width:50%;"><strong>Endorsed by SSE:</strong><br><br>Signature: _______________________<br><br>Name: ' + xmlEsc(proj.sseName || "_______________________") + '<br>Date: _______________________</td></tr>' +
+        '</table></div>');
+      els.forEach(function (el, i) { pages.push(buildElementReportPageHtml(proj, el, "Element #" + (i + 1), false)); });
+    });
+    if (!pages.length) { toast(t("exportEmpty")); return false; }
+    $("reportSheet").innerHTML = pages.join("");
+    $("reportModal").hidden = false;
+    return true;
+  }
+
+  async function runSelectedExport() {
+    var wantPdf = $("chkExpPdf").checked;
+    var wantExcel = $("chkExpExcel").checked;
+    var wantBackup = $("chkExpBackup").checked;
+    if (!wantPdf && !wantExcel && !wantBackup) { toast(t("needExportPick")); return; }
+
+    var projIdFilter = $("exportProjectSelect").value || "all";
+    var targetProjs = projIdFilter === "all" ? state.projects : state.projects.filter(function (p) { return p.id === projIdFilter; });
+    if (!targetProjs.length) { toast(t("exportEmpty")); return; }
+    var prefix = targetProjs.length === 1 ? slug(targetProjs[0].estate) + "_" + targetProjs[0].inspectionDate : "Estate_Inspections_v3";
+
+    if (wantExcel && !wantBackup) {
+      if (typeof JSZip === "undefined") { toast(t("exportFail")); return; }
+      var rows = buildExportRows(targetProjs);
+      var xlsx = await buildXlsxBlob(rows.recRows);
+      downloadBlob(xlsx, prefix + "_" + stampHkt() + ".xlsx");
+      $("exportStatus").textContent = t("exportDone");
+      toast(t("exportDone"));
+    } else if (wantBackup && !wantExcel) {
+      var targetElems = [];
+      targetProjs.forEach(function (p) { targetElems = targetElems.concat(elementsOf(p.id)); });
+      var bBlob = new Blob([JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), projects: targetProjs, elements: targetElems }, null, 2)], { type: "application/json" });
+      downloadBlob(bBlob, prefix + "_backup_" + stampHkt() + ".json");
+      $("exportStatus").textContent = t("exportDone");
+      toast(t("exportDone"));
+    } else if (wantExcel && wantBackup) {
+      await runZipExport(projIdFilter);
+    }
+
+    if (wantPdf) {
+      openMultiProjectReport(targetProjs);
+    }
   }
 
   async function runZipExport(projIdFilter) {
@@ -1685,7 +1824,19 @@
       if (state.map && state.tileLayer) { state.map.removeLayer(state.tileLayer); state.tileLayer = createBasemapLayer().addTo(state.map); }
     });
 
-    $("btnExportZip").addEventListener("click", function () { runZipExport($("exportProjectSelect").value || "all"); });
+    function setExportPreset(pdf, excel, backup, activeId) {
+      $("chkExpPdf").checked = pdf;
+      $("chkExpExcel").checked = excel;
+      $("chkExpBackup").checked = backup;
+      ["prePdfOnly", "preExcelOnly", "preBackupOnly", "preBothAll"].forEach(function (id) {
+        $(id).classList.toggle("is-active", id === activeId);
+      });
+    }
+    $("prePdfOnly").addEventListener("click", function () { setExportPreset(true, false, false, "prePdfOnly"); });
+    $("preExcelOnly").addEventListener("click", function () { setExportPreset(false, true, false, "preExcelOnly"); });
+    $("preBackupOnly").addEventListener("click", function () { setExportPreset(false, false, true, "preBackupOnly"); });
+    $("preBothAll").addEventListener("click", function () { setExportPreset(true, true, true, "preBothAll"); });
+    $("btnExportSelected").addEventListener("click", runSelectedExport);
     $("btnImportBackup").addEventListener("click", function () { $("fileImportBackup").value = ""; $("fileImportBackup").click(); });
     $("fileImportBackup").addEventListener("change", function (e) { if (e.target.files && e.target.files[0]) importJsonBackup(e.target.files[0]); });
     $("btnClearAll").addEventListener("click", async function () {
