@@ -189,7 +189,8 @@
       pickerHint: "點擊地圖放置標記，再撳「套用坐標」。",
       pickerApply: "套用坐標",
       reportModalTitle: "結構巡查報告預覽（可列印／存為 PDF）",
-      reportPrintNow: "列印／存為 PDF",
+      reportDownloadPdf: "直接下載 PDF 檔",
+      reportPrintNow: "系統列印",
       close: "關閉",
       simplePlot: "簡易相對位置圖",
       maxRate: "最高評級"
@@ -325,7 +326,8 @@
       pickerHint: "Tap on the map to place a pin, then tap Apply.",
       pickerApply: "Apply Location",
       reportModalTitle: "Inspection Report Preview (Print / Save PDF)",
-      reportPrintNow: "Print / Save PDF",
+      reportDownloadPdf: "Download PDF File",
+      reportPrintNow: "System Print",
       close: "Close",
       simplePlot: "Simple Relative Plot",
       maxRate: "Max Rating"
@@ -354,7 +356,8 @@
     pickerMap: null,
     pickerMarker: null,
     pickerLatLng: null,
-    objectUrls: []
+    objectUrls: [],
+    lastReportProjs: []
   };
 
   function $(id) { return document.getElementById(id); }
@@ -728,7 +731,7 @@
   function applyLang() {
     var p = I18N[state.lang];
     document.documentElement.lang = p.htmlLang;
-    document.title = p.title + " v3.3";
+    document.title = p.title + " v3.4";
     $("appTitle").textContent = p.title;
     $("appTagline").textContent = p.tagline;
     $("btnLang").textContent = p.langBtn;
@@ -815,6 +818,7 @@
     $("btnPickerCancel").textContent = p.cancel;
     $("btnPickerApply").textContent = p.pickerApply;
     $("reportModalTitle").textContent = p.reportModalTitle;
+    $("btnReportDownloadPdf").textContent = p.reportDownloadPdf;
     $("btnReportPrintNow").textContent = p.reportPrintNow;
     $("btnReportClose2").textContent = p.close;
     $("btnToggleBasemap").textContent = state.basemap === "arcgis" ? p.basemapArcgis : p.basemapOsm;
@@ -1472,6 +1476,7 @@
       '</table></div>';
 
     var detailPages = els.map(function (el, i) { return buildElementReportPageHtml(proj, el, "Element #" + (i + 1), false); }).join("");
+    state.lastReportProjs = [proj];
     $("reportSheet").innerHTML = coverHtml + detailPages;
     $("reportModal").hidden = false;
   }
@@ -1483,6 +1488,378 @@
     if (!proj) return;
     $("reportSheet").innerHTML = buildElementReportPageHtml(proj, el, el.name, true);
     $("reportModal").hidden = false;
+  }
+
+
+  /* ---------- Offline Real Multi-Page A4 PDF Generator (Zero External Libs, Full CJK + Photos) ---------- */
+  function wrapCanvasText(ctx, text, maxW) {
+    var str = String(text == null ? "" : text);
+    var lines = [];
+    str.split(/\r?\n/).forEach(function (para) {
+      var line = "";
+      for (var i = 0; i < para.length; i++) {
+        var ch = para[i];
+        var test = line + ch;
+        if (ctx.measureText(test).width > maxW && line.length > 0) {
+          lines.push(line);
+          line = ch;
+        } else {
+          line = test;
+        }
+      }
+      lines.push(line);
+    });
+    return lines;
+  }
+
+  function dataUrlToUint8(dataUrl) {
+    var bin = atob(dataUrl.split(",")[1]);
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return arr;
+  }
+
+  function assembleJpegPagesToPdfBlob(jpegPages) {
+    // A4 in PDF points: 595 x 842
+    var W = 595, H = 842;
+    var chunks = [];
+    var offset = 0;
+    var offsets = [0]; // obj 0 free
+
+    function pushStr(s) {
+      var bytes = new Uint8Array(s.length);
+      for (var i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i) & 0xff;
+      chunks.push(bytes);
+      offset += bytes.length;
+    }
+    function pushBytes(u8) {
+      chunks.push(u8);
+      offset += u8.length;
+    }
+    function startObj(num) {
+      offsets[num] = offset;
+      pushStr(num + " 0 obj\n");
+    }
+
+    pushStr("%PDF-1.4\n%\xFF\xFF\xFF\xFF\n");
+    var n = jpegPages.length;
+    // Object IDs: 1 = Catalog, 2 = Pages, then for each page i (0..n-1):
+    //   imgObj = 3 + i*3, contentObj = 4 + i*3, pageObj = 5 + i*3
+    startObj(1);
+    pushStr("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+
+    var kids = [];
+    for (var k = 0; k < n; k++) kids.push((5 + k * 3) + " 0 R");
+    startObj(2);
+    pushStr("<< /Type /Pages /Kids [" + kids.join(" ") + "] /Count " + n + " >>\nendobj\n");
+
+    for (var i = 0; i < n; i++) {
+      var pg = jpegPages[i];
+      var imgId = 3 + i * 3;
+      var cntId = 4 + i * 3;
+      var pageId = 5 + i * 3;
+
+      startObj(imgId);
+      pushStr("<< /Type /XObject /Subtype /Image /Width " + pg.w + " /Height " + pg.h +
+        " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + pg.bytes.length + " >>\nstream\n");
+      pushBytes(pg.bytes);
+      pushStr("\nendstream\nendobj\n");
+
+      var contentStr = "q\n" + W + " 0 0 " + H + " 0 0 cm\n/Im0 Do\nQ\n";
+      startObj(cntId);
+      pushStr("<< /Length " + contentStr.length + " >>\nstream\n" + contentStr + "endstream\nendobj\n");
+
+      startObj(pageId);
+      pushStr("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + W + " " + H + "] " +
+        "/Resources << /XObject << /Im0 " + imgId + " 0 R >> >> /Contents " + cntId + " 0 R >>\nendobj\n");
+    }
+
+    var totalObjs = 3 + n * 3;
+    var xrefOffset = offset;
+    pushStr("xref\n0 " + totalObjs + "\n");
+    pushStr("0000000000 65535 f \n");
+    for (var j = 1; j < totalObjs; j++) {
+      var offStr = String(offsets[j] || 0).padStart(10, "0");
+      pushStr(offStr + " 00000 n \n");
+    }
+    pushStr("trailer\n<< /Size " + totalObjs + " /Root 1 0 R >>\nstartxref\n" + xrefOffset + "\n%%EOF");
+    return new Blob(chunks, { type: "application/pdf" });
+  }
+
+  function newA4Canvas() {
+    var c = document.createElement("canvas");
+    c.width = 1240; c.height = 1754; // 150 DPI A4
+    var ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "#111827";
+    ctx.strokeStyle = "#334155";
+    return { c: c, ctx: ctx };
+  }
+
+  function drawCell(ctx, x, y, w, h, text, opts) {
+    opts = opts || {};
+    if (opts.fill) { ctx.fillStyle = opts.fill; ctx.fillRect(x, y, w, h); }
+    ctx.strokeStyle = "#334155";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = opts.color || "#111827";
+    ctx.font = (opts.bold ? "bold " : "") + (opts.size || 20) + "px 'PingFang HK', 'Noto Sans TC', Arial, sans-serif";
+    ctx.textBaseline = "top";
+    var pad = opts.pad != null ? opts.pad : 8;
+    var lines = wrapCanvasText(ctx, text, w - pad * 2);
+    var lh = (opts.size || 20) * 1.3;
+    lines.forEach(function (ln, idx) {
+      if (y + pad + idx * lh > y + h - 4) return;
+      if (opts.align === "center") {
+        var tw = ctx.measureText(ln).width;
+        ctx.fillText(ln, x + (w - tw) / 2, y + pad + idx * lh);
+      } else {
+        ctx.fillText(ln, x + pad, y + pad + idx * lh);
+      }
+    });
+  }
+
+  async function renderSummaryPageCanvas(proj, els) {
+    var pg = newA4Canvas(), ctx = pg.ctx;
+    var M = 60, W = 1120, y = 55;
+    var sseCount = els.filter(function (e) { return hasSevereRating(e.ratings) || elemStatusOf(e) === "sse"; }).length;
+
+    ctx.fillStyle = "#475569";
+    ctx.font = "18px Arial, sans-serif";
+    ctx.fillText("Page 1 — Summary Report (Appendix X)", M + W - 320, y);
+    y += 32;
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 26px Arial, sans-serif";
+    var h1 = "HOUSING DEPARTMENT — ESTATE MANAGEMENT DIVISION";
+    ctx.fillText(h1, M + (W - ctx.measureText(h1).width) / 2, y);
+    y += 36;
+    ctx.font = "bold 28px Arial, sans-serif";
+    var h2 = "SUMMARY REPORT OF STRUCTURAL INSPECTION";
+    ctx.fillText(h2, M + (W - ctx.measureText(h2).width) / 2, y);
+    y += 48;
+
+    // Metadata Table
+    var rowH = 44;
+    drawCell(ctx, M, y, W / 2, rowH, "RMO / DMO: " + (proj.rmo ? proj.rmo + " · " : "") + (proj.dmo || "-"), { size: 19, bold: true });
+    drawCell(ctx, M + W / 2, y, W / 2, rowH, "Estate: " + proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : ""), { size: 19, bold: true });
+    y += rowH;
+    drawCell(ctx, M, y, W / 2, rowH, "Inspection Date: " + fmtDateDisplay(proj.inspectionDate), { size: 19 });
+    drawCell(ctx, M + W / 2, y, W / 2, rowH, "Handover Date: " + (proj.handoverDate || "-"), { size: 19 });
+    y += rowH;
+    drawCell(ctx, M, y, W / 2, rowH, "Total Elements Inspected: " + els.length, { size: 19, bold: true });
+    drawCell(ctx, M + W / 2, y, W / 2, rowH, "SSE Attention (Rating 4-5): " + sseCount, { size: 19, bold: true, color: sseCount ? "#b42318" : "#157a4b" });
+    y += rowH + 18;
+
+    if (proj.notes) {
+      drawCell(ctx, M, y, W, 56, "Project Notes: " + proj.notes, { size: 18, fill: "#f8fafc" });
+      y += 70;
+    }
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 22px 'PingFang HK', Arial, sans-serif";
+    ctx.fillText("Summary of Inspected Structural Elements", M, y);
+    y += 32;
+
+    // Table Header
+    var cols = [55, 310, 105, 165, 85, 400];
+    var hdrs = ["#", "Structural Element & Location", "Max Rate", "Status", "Photos", "5.1 Remarks"];
+    var cx = M;
+    for (var i = 0; i < cols.length; i++) {
+      drawCell(ctx, cx, y, cols[i], 40, hdrs[i], { size: 17, bold: true, fill: "#e2e8f0", align: i === 0 || i === 2 || i === 4 ? "center" : "left" });
+      cx += cols[i];
+    }
+    y += 40;
+
+    var maxTableY = 1390;
+    if (!els.length) {
+      drawCell(ctx, M, y, W, 46, "No structural elements recorded yet.", { size: 18, align: "center", color: "#64748b" });
+      y += 46;
+    } else {
+      for (var r = 0; r < els.length; r++) {
+        if (y + 58 > maxTableY) {
+          drawCell(ctx, M, y, W, 38, "... (" + (els.length - r) + " more elements detailed on following pages)", { size: 16, align: "center", color: "#475569" });
+          y += 38;
+          break;
+        }
+        var el = els[r];
+        var mr = maxRatingOf(el.ratings);
+        var phCnt = photosOfElement(el.id).length;
+        var stLabel = mr >= 4 ? "SSE Attention" : elemStatusOf(el);
+        var rh = 58;
+        cx = M;
+        var vals = [
+          String(r + 1),
+          el.name + (el.location ? "\n" + el.location : ""),
+          mr ? String(mr) : "-",
+          stLabel,
+          String(phCnt),
+          el.remarks || "-"
+        ];
+        for (var cIdx = 0; cIdx < cols.length; cIdx++) {
+          drawCell(ctx, cx, y, cols[cIdx], rh, vals[cIdx], {
+            size: 16,
+            bold: cIdx === 3 && mr >= 4,
+            color: cIdx === 3 && mr >= 4 ? "#b42318" : "#111827",
+            align: cIdx === 0 || cIdx === 2 || cIdx === 4 ? "center" : "left"
+          });
+          cx += cols[cIdx];
+        }
+        y += rh;
+      }
+    }
+
+    // SE / SSE Signature Block anchored cleanly at bottom of Page 1 Summary!
+    var sigY = Math.max(y + 28, 1455);
+    var sigH = 220;
+    drawCell(ctx, M, sigY, W / 2, sigH,
+      "Reported by SE:\n\nSignature: ____________________________\n\nName: " + (proj.seName || "____________________________") + "\nDate: " + fmtDateDisplay(proj.inspectionDate),
+      { size: 19, pad: 14, fill: "#fcfcfd" }
+    );
+    drawCell(ctx, M + W / 2, sigY, W / 2, sigH,
+      "Endorsed by SSE:\n\nSignature: ____________________________\n\nName: " + (proj.sseName || "____________________________") + "\nDate: ____________________________",
+      { size: 19, pad: 14, fill: "#fcfcfd" }
+    );
+
+    return { w: pg.c.width, h: pg.c.height, bytes: dataUrlToUint8(pg.c.toDataURL("image/jpeg", 0.88)) };
+  }
+
+  async function renderElementPagesCanvas(proj, el, idxNum) {
+    var pages = [];
+    var pg = newA4Canvas(), ctx = pg.ctx;
+    var M = 60, W = 1120, y = 52;
+
+    ctx.fillStyle = "#475569";
+    ctx.font = "18px Arial, sans-serif";
+    ctx.fillText("Element #" + idxNum + " — " + proj.estate, M, y);
+    ctx.fillText("Appendix X", M + W - 105, y);
+    y += 30;
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 24px Arial, sans-serif";
+    var t1 = "HOUSING DEPARTMENT — SUMMARY REPORT OF STRUCTURAL INSPECTION";
+    ctx.fillText(t1, M + (W - ctx.measureText(t1).width) / 2, y);
+    y += 38;
+
+    drawCell(ctx, M, y, W * 0.65, 42, "Inspected Structure: " + el.name + (el.location ? " (" + el.location + ")" : ""), { size: 18, bold: true });
+    drawCell(ctx, M + W * 0.65, y, W * 0.35, 42, "Date: " + fmtDateDisplay(proj.inspectionDate), { size: 18 });
+    y += 42;
+    drawCell(ctx, M, y, W * 0.5, 38, "RMO / DMO: " + (proj.rmo ? proj.rmo + " · " : "") + (proj.dmo || "-"), { size: 17 });
+    drawCell(ctx, M + W * 0.5, y, W * 0.5, 38, "Estate: " + proj.estate + "  |  Handover: " + (proj.handoverDate || "-"), { size: 17 });
+    y += 46;
+
+    // Checklist table (1.1 - 4.3)
+    var codeW = 70, rateW = 58, descW = W - codeW - rateW * 6;
+    drawCell(ctx, M, y, codeW, 34, "Item", { size: 16, bold: true, fill: "#e2e8f0", align: "center" });
+    drawCell(ctx, M + codeW, y, descW, 34, "Inspection Item Description", { size: 16, bold: true, fill: "#e2e8f0" });
+    for (var ri = 0; ri < RATINGS.length; ri++) {
+      drawCell(ctx, M + codeW + descW + ri * rateW, y, rateW, 34, RATINGS[ri], { size: 15, bold: true, fill: "#e2e8f0", align: "center" });
+    }
+    y += 34;
+
+    var ratings = el.ratings || {};
+    CHECKLIST_SCHEMA.forEach(function (sec) {
+      drawCell(ctx, M, y, W, 30, sec.sectionEn, { size: 16, bold: true, fill: "#f1f5f9", pad: 6 });
+      y += 30;
+      sec.items.forEach(function (it) {
+        var rh = 38;
+        var desc = it.en + (it.hasCustomText && el.othersText ? " : " + el.othersText : "");
+        drawCell(ctx, M, y, codeW, rh, it.code, { size: 15, bold: true, align: "center", pad: 8 });
+        drawCell(ctx, M + codeW, y, descW, rh, desc, { size: 15, pad: 8 });
+        var chosen = ratings[it.code] || "";
+        for (var j = 0; j < RATINGS.length; j++) {
+          var rx = M + codeW + descW + j * rateW;
+          var isSel = chosen === RATINGS[j];
+          drawCell(ctx, rx, y, rateW, rh, RATINGS[j], {
+            size: 15, bold: isSel, align: "center", pad: 8,
+            color: isSel ? "#b42318" : "#64748b",
+            fill: isSel ? "#fef2f2" : null
+          });
+          if (isSel) {
+            ctx.strokeStyle = "#b42318";
+            ctx.lineWidth = 2.4;
+            ctx.beginPath();
+            ctx.ellipse(rx + rateW / 2, y + rh / 2, 20, 14, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
+        y += rh;
+      });
+    });
+
+    // 5.1 Remarks
+    var remText = "5.1 Remarks: " + (el.remarks || "-") +
+      (el.condition ? "\nCondition: " + el.condition : "") +
+      (el.externalWorks ? "\nExternal Works: " + el.externalWorks : "");
+    drawCell(ctx, M, y, W, 115, remText, { size: 16, pad: 10, fill: "#fcfcfd" });
+    y += 130;
+
+    // Element Photos (up to 2 photos on bottom of same page, overflow to next page 4 per page)
+    var photos = photosOfElement(el.id);
+    if (photos.length) {
+      var colW = (W - 24) / 2, imgH = 260;
+      var pIdx = 0;
+      if (y + imgH + 45 <= 1700) {
+        for (var c = 0; c < 2 && pIdx < photos.length; c++, pIdx++) {
+          await drawPhotoBox(ctx, M + c * (colW + 24), y, colW, imgH, photos[pIdx], "Element #" + idxNum + " Photo " + (pIdx + 1));
+        }
+      }
+      pages.push({ w: pg.c.width, h: pg.c.height, bytes: dataUrlToUint8(pg.c.toDataURL("image/jpeg", 0.86)) });
+
+      while (pIdx < photos.length) {
+        var pg2 = newA4Canvas(), ctx2 = pg2.ctx;
+        ctx2.fillStyle = "#0f172a";
+        ctx2.font = "bold 22px 'PingFang HK', Arial, sans-serif";
+        ctx2.fillText("Element #" + idxNum + " — " + el.name + " (Inspection Photos)", M, 55);
+        var py = 105;
+        for (var row = 0; row < 2 && pIdx < photos.length; row++) {
+          for (var col = 0; col < 2 && pIdx < photos.length; col++, pIdx++) {
+            await drawPhotoBox(ctx2, M + col * (colW + 24), py + row * 420, colW, 340, photos[pIdx], "Element #" + idxNum + " Photo " + (pIdx + 1));
+          }
+        }
+        pages.push({ w: pg2.c.width, h: pg2.c.height, bytes: dataUrlToUint8(pg2.c.toDataURL("image/jpeg", 0.86)) });
+      }
+    } else {
+      pages.push({ w: pg.c.width, h: pg.c.height, bytes: dataUrlToUint8(pg.c.toDataURL("image/jpeg", 0.86)) });
+    }
+    return pages;
+  }
+
+  async function drawPhotoBox(ctx, x, y, w, imgH, photo, label) {
+    ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 1.2;
+    ctx.strokeRect(x, y, w, imgH + 54);
+    try {
+      var blob = photo.blob || photo.thumb;
+      if (blob) {
+        var img = await decodeImage(blob);
+        var iw = img.width || img.naturalWidth, ih = img.height || img.naturalHeight;
+        var ratio = Math.min((w - 12) / iw, (imgH - 12) / ih);
+        var dw = iw * ratio, dh = ih * ratio;
+        ctx.drawImage(img, x + (w - dw) / 2, y + (imgH - dh) / 2, dw, dh);
+        if (img.close) img.close();
+      }
+    } catch (e) {}
+    var cap = label + (photo.caption ? ": " + photo.caption : "") + " (" + fmtCoord(photo.lat, photo.lng) + ")";
+    ctx.fillStyle = "#1e293b";
+    ctx.font = "15px 'PingFang HK', Arial, sans-serif";
+    wrapCanvasText(ctx, cap, w - 16).slice(0, 2).forEach(function (ln, idx) {
+      ctx.fillText(ln, x + 8, y + imgH + 6 + idx * 20);
+    });
+  }
+
+  async function buildPdfBlobForProjects(targetProjs) {
+    var allPages = [];
+    for (var i = 0; i < targetProjs.length; i++) {
+      var proj = targetProjs[i];
+      var els = elementsOf(proj.id);
+      allPages.push(await renderSummaryPageCanvas(proj, els));
+      for (var j = 0; j < els.length; j++) {
+        var elPages = await renderElementPagesCanvas(proj, els[j], j + 1);
+        allPages = allPages.concat(elPages);
+      }
+    }
+    return assembleJpegPagesToPdfBlob(allPages);
   }
 
   /* ---------- Export ZIP & Backup Restore ---------- */
@@ -1556,6 +1933,7 @@
       els.forEach(function (el, i) { pages.push(buildElementReportPageHtml(proj, el, "Element #" + (i + 1), false)); });
     });
     if (!pages.length) { toast(t("exportEmpty")); return false; }
+    state.lastReportProjs = targetProjs;
     $("reportSheet").innerHTML = pages.join("");
     $("reportModal").hidden = false;
     return true;
@@ -1570,28 +1948,75 @@
     var projIdFilter = $("exportProjectSelect").value || "all";
     var targetProjs = projIdFilter === "all" ? state.projects : state.projects.filter(function (p) { return p.id === projIdFilter; });
     if (!targetProjs.length) { toast(t("exportEmpty")); return; }
-    var prefix = targetProjs.length === 1 ? slug(targetProjs[0].estate) + "_" + targetProjs[0].inspectionDate : "Estate_Inspections_v3";
+    var prefix = targetProjs.length === 1 ? slug(targetProjs[0].estate) + "_" + targetProjs[0].inspectionDate : "Estate_Inspections";
+    var countSel = (wantPdf ? 1 : 0) + (wantExcel ? 1 : 0) + (wantBackup ? 1 : 0);
 
-    if (wantExcel && !wantBackup) {
+    $("exportStatus").textContent = t("exporting");
+    try {
+      if (countSel === 1) {
+        if (wantPdf) {
+          var pdfBlob = await buildPdfBlobForProjects(targetProjs);
+          var pdfName = prefix + "_Inspection_Report_" + stampHkt() + ".pdf";
+          downloadBlob(pdfBlob, pdfName);
+          $("exportStatus").textContent = t("exportDone") + " (" + pdfName + ")";
+        } else if (wantExcel) {
+          if (typeof JSZip === "undefined") { toast(t("exportFail")); return; }
+          var rows = buildExportRows(targetProjs);
+          var xlsxBlob = await buildXlsxBlob(rows.recRows);
+          var xlsxName = prefix + "_Inspection_Summary_" + stampHkt() + ".xlsx";
+          downloadBlob(xlsxBlob, xlsxName);
+          $("exportStatus").textContent = t("exportDone") + " (" + xlsxName + ")";
+        } else if (wantBackup) {
+          var elems = [];
+          targetProjs.forEach(function (p) { elems = elems.concat(elementsOf(p.id)); });
+          var jsonName = prefix + "_backup_" + stampHkt() + ".json";
+          downloadBlob(new Blob([JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), projects: targetProjs, elements: elems }, null, 2)], { type: "application/json" }), jsonName);
+          $("exportStatus").textContent = t("exportDone") + " (" + jsonName + ")";
+        }
+        toast(t("exportDone"));
+        return;
+      }
+
+      // Multiple selected -> package selected outputs cleanly into one ZIP!
       if (typeof JSZip === "undefined") { toast(t("exportFail")); return; }
-      var rows = buildExportRows(targetProjs);
-      var xlsx = await buildXlsxBlob(rows.recRows);
-      downloadBlob(xlsx, prefix + "_" + stampHkt() + ".xlsx");
-      $("exportStatus").textContent = t("exportDone");
+      var zip = new JSZip();
+      var included = [];
+      if (wantPdf) {
+        var pName = prefix + "_Inspection_Report.pdf";
+        zip.file(pName, await buildPdfBlobForProjects(targetProjs));
+        included.push("PDF");
+      }
+      if (wantExcel) {
+        var rData = buildExportRows(targetProjs);
+        zip.file(prefix + "_Inspection_Summary.xlsx", await buildXlsxBlob(rData.recRows));
+        zip.file("inspection_summary.csv", buildCsv(rData.recRows));
+        included.push("Excel");
+      }
+      if (wantBackup) {
+        var bElems = [];
+        var rData2 = buildExportRows(targetProjs);
+        targetProjs.forEach(function (proj) {
+          var els = elementsOf(proj.id);
+          bElems = bElems.concat(els);
+          els.forEach(function (el, idx) {
+            photosOfElement(el.id).forEach(function (p, pi) {
+              var fn = "photos/" + slug(proj.estate) + "/" + String(idx + 1).padStart(2, "0") + "_" + slug(el.name) + "_" + String(pi + 1).padStart(2, "0") + ".jpg";
+              if (p.blob) zip.file(fn, p.blob);
+            });
+          });
+        });
+        zip.file("inspection_photos.csv", buildCsv(rData2.photoRows));
+        zip.file("backup.json", JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), projects: targetProjs, elements: bElems }, null, 2));
+        included.push("Backup + Photos");
+      }
+      var zName = prefix + "_" + stampHkt() + ".zip";
+      downloadBlob(await zip.generateAsync({ type: "blob" }), zName);
+      $("exportStatus").textContent = t("exportDone") + " [" + included.join(" + ") + "] → " + zName;
       toast(t("exportDone"));
-    } else if (wantBackup && !wantExcel) {
-      var targetElems = [];
-      targetProjs.forEach(function (p) { targetElems = targetElems.concat(elementsOf(p.id)); });
-      var bBlob = new Blob([JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), projects: targetProjs, elements: targetElems }, null, 2)], { type: "application/json" });
-      downloadBlob(bBlob, prefix + "_backup_" + stampHkt() + ".json");
-      $("exportStatus").textContent = t("exportDone");
-      toast(t("exportDone"));
-    } else if (wantExcel && wantBackup) {
-      await runZipExport(projIdFilter);
-    }
-
-    if (wantPdf) {
-      openMultiProjectReport(targetProjs);
+    } catch (err) {
+      console.error(err);
+      $("exportStatus").textContent = t("exportFail");
+      toast(t("exportFail"));
     }
   }
 
@@ -1633,7 +2058,9 @@
         });
       });
 
-      zip.file("inspection_summary.xlsx", await buildXlsxBlob(recRows));
+      var basePrefix = targetProjs.length === 1 ? slug(targetProjs[0].estate) + "_" + targetProjs[0].inspectionDate : "Estate_Inspections";
+      zip.file(basePrefix + "_Inspection_Report.pdf", await buildPdfBlobForProjects(targetProjs));
+      zip.file(basePrefix + "_Inspection_Summary.xlsx", await buildXlsxBlob(recRows));
       zip.file("inspection_summary.csv", buildCsv(recRows));
       zip.file("inspection_photos.csv", buildCsv(photoRows));
       zip.file("backup.json", JSON.stringify({ version: 3, exportedAt: new Date().toISOString(), projects: targetProjs, elements: targetElems }, null, 2));
@@ -1848,6 +2275,15 @@
 
     $("btnCloseReport").addEventListener("click", function () { $("reportModal").hidden = true; });
     $("btnReportClose2").addEventListener("click", function () { $("reportModal").hidden = true; });
+    $("btnReportDownloadPdf").addEventListener("click", async function () {
+      var list = state.lastReportProjs && state.lastReportProjs.length ? state.lastReportProjs : (state.currentProjectId ? [getProject(state.currentProjectId)].filter(Boolean) : []);
+      if (!list.length) return;
+      toast(t("exporting"));
+      var blob = await buildPdfBlobForProjects(list);
+      var nm = (list.length === 1 ? slug(list[0].estate) + "_" + list[0].inspectionDate : "Estate_Inspections") + "_Inspection_Report.pdf";
+      downloadBlob(blob, nm);
+      toast(t("exportDone"));
+    });
     $("btnReportPrintNow").addEventListener("click", function () { window.print(); });
     $("btnCloseLightbox").addEventListener("click", function () { $("lightbox").hidden = true; $("lightboxImg").removeAttribute("src"); });
     $("lightbox").addEventListener("click", function (e) { if (e.target === $("lightbox")) { $("lightbox").hidden = true; $("lightboxImg").removeAttribute("src"); } });
