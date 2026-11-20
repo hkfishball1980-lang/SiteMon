@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="地盤巡查">
   <meta name="description" content="Offline iPad Estate Structural Inspection PWA (Project -> Elements -> HD Appendix X Report).">
-  <title>地盤巡查 Site Inspection v3</title>
+  <title>地盤巡查 Site Inspection v3.1</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icons/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-32.png">
@@ -24,7 +24,7 @@
       <div class="brand">
         <img class="brand-icon" src="./icons/icon-192.png" width="36" height="36" alt="">
         <div>
-          <h1><span id="appTitle">地盤巡查</span> <span class="ver-pill">v3.0</span></h1>
+          <h1><span id="appTitle">地盤巡查</span> <span class="ver-pill">v3.1</span></h1>
           <p class="tagline" id="appTagline">屋邨專案 → 多項 Structural Elements → Appendix X 巡查報告</p>
         </div>
       </div>
@@ -54,6 +54,16 @@
             <input type="search" id="searchProjInput" autocomplete="off">
           </label>
           <button type="button" id="btnNewProject" class="btn btn-primary"></button>
+        </div>
+                <div class="rmo-bar" id="rmoFilterBar">
+          <button type="button" class="rmo-chip is-active" data-rmo="all" id="rmoAll">全部 RMO</button>
+          <button type="button" class="rmo-chip" data-rmo="HKI">HKI</button>
+          <button type="button" class="rmo-chip" data-rmo="KC">KC</button>
+          <button type="button" class="rmo-chip" data-rmo="KE">KE</button>
+          <button type="button" class="rmo-chip" data-rmo="KWS">KWS</button>
+          <button type="button" class="rmo-chip" data-rmo="TY">TY</button>
+          <button type="button" class="rmo-chip" data-rmo="TNS">TNS</button>
+          <button type="button" class="rmo-chip" data-rmo="WTT">WTT</button>
         </div>
         <p id="projectsEmpty" class="empty" hidden></p>
         <div id="projectsList" class="card-list"></div>
@@ -271,22 +281,41 @@
       <h2 id="projModalTitle" style="font-size:1.08rem;margin-bottom:12px;color:var(--navy);"></h2>
       <form id="projectForm" autocomplete="off">
         <input type="hidden" id="fieldProjId">
+        <div id="autofillBanner" class="autofill-note" hidden></div>
         <div class="form-grid">
           <label class="field">
+            <span id="lblProjRmo"></span>
+            <select id="fieldProjRmo">
+              <option value="">-- 選擇 RMO 七區 / 自動帶入 --</option>
+              <option value="HKI">HKI（港島及離島）</option>
+              <option value="KC">KC（九龍中）</option>
+              <option value="KE">KE（九龍東）</option>
+              <option value="KWS">KWS（西九龍及西貢）</option>
+              <option value="TY">TY（屯門及元朗）</option>
+              <option value="TNS">TNS（大埔、北區及沙田）</option>
+              <option value="WTT">WTT（黃大仙、青衣及荃灣）</option>
+            </select>
+          </label>
+          <div class="field ac-wrap">
+            <span id="lblProjEstate"></span>
+            <input type="text" id="fieldProjEstate" required maxlength="160" placeholder="輸入中／英文屋邨名或代號搜尋…">
+            <div id="estateAcList" class="ac-list" hidden></div>
+          </div>
+          <label class="field">
             <span id="lblProjDmo"></span>
-            <input type="text" id="fieldProjDmo" maxlength="40" placeholder="e.g. DMO/KWT">
+            <input type="text" id="fieldProjDmo" maxlength="80" placeholder="選擇屋邨後自動填入">
           </label>
           <label class="field">
-            <span id="lblProjEstate"></span>
-            <input type="text" id="fieldProjEstate" required maxlength="160">
+            <span id="lblProjHandover"></span>
+            <input type="text" id="fieldProjHandover" maxlength="20" placeholder="mm/yyyy（自動填入）">
           </label>
           <label class="field">
             <span id="lblProjDate"></span>
             <input type="date" id="fieldProjDate" required>
           </label>
           <label class="field">
-            <span id="lblProjHandover"></span>
-            <input type="text" id="fieldProjHandover" maxlength="20" placeholder="mm/yyyy">
+            <span id="lblProjNature"></span>
+            <input type="text" id="fieldProjNature" maxlength="40" placeholder="PRH / HOS / TPS（自動填入）">
           </label>
           <label class="field">
             <span id="lblProjSe"></span>
@@ -360,6 +389,7 @@
 
   <script src="./vendor/jszip.min.js"></script>
   <script src="./vendor/leaflet/leaflet.js"></script>
+  <script src="./estates-data.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

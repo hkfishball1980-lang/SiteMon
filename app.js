@@ -86,7 +86,11 @@
       emptyElements: "呢個屋邨專案暫時未有 Structural Element。撳「+ 新增 Structural Element」開始逐項巡查。",
       projModalNew: "新增屋邨巡查專案（Project）",
       projModalEdit: "編輯屋邨專案資料",
-      projDmo: "DMO",
+      rmoAll: "全部 RMO",
+      projRmo: "RMO 區域（七區）",
+      projDmo: "DMO / District（自動填入）",
+      projNature: "屋邨性質 / 管理（自動填入）",
+      autofillMsg: "已自動帶入屋邨主檔資料：",
       projEstate: "屋邨名稱 (Estate) *",
       projDate: "巡查日期 (Inspection Date) *",
       projHandover: "移交日期 (Handover Date)",
@@ -207,7 +211,11 @@
       emptyElements: "No structural elements in this project yet. Tap “+ Add Structural Element” to begin.",
       projModalNew: "New Estate Inspection Project",
       projModalEdit: "Edit Estate Project",
-      projDmo: "DMO",
+      rmoAll: "全部 RMO",
+      projRmo: "RMO 區域（七區）",
+      projDmo: "DMO / District（自動填入）",
+      projNature: "屋邨性質 / 管理（自動填入）",
+      autofillMsg: "已自動帶入屋邨主檔資料：",
       projEstate: "Estate Name *",
       projDate: "Inspection Date *",
       projHandover: "Handover Date (mm/yyyy)",
@@ -305,7 +313,9 @@
     lang: "zh",
     basemap: "arcgis",
     tab: "projects",
+    filterRmo: "all",
     filterStatus: "all",
+    pendingEstateCoords: null,
     projects: [],
     elements: [],
     photos: [],
@@ -674,7 +684,7 @@
   function applyLang() {
     var p = I18N[state.lang];
     document.documentElement.lang = p.htmlLang;
-    document.title = p.title + " v3.0";
+    document.title = p.title + " v3.1";
     $("appTitle").textContent = p.title;
     $("appTagline").textContent = p.tagline;
     $("btnLang").textContent = p.langBtn;
@@ -698,7 +708,10 @@
     $("fltSse").textContent = p.fltSse;
     $("fltFollowup").textContent = p.fltFollowup;
     $("fltNormal").textContent = p.fltNormal;
+    $("rmoAll").textContent = p.rmoAll;
+    $("lblProjRmo").textContent = p.projRmo;
     $("lblProjDmo").textContent = p.projDmo;
+    $("lblProjNature").textContent = p.projNature;
     $("lblProjEstate").textContent = p.projEstate;
     $("lblProjDate").textContent = p.projDate;
     $("lblProjHandover").textContent = p.projHandover;
@@ -811,8 +824,9 @@
     var list = $("projectsList");
     list.innerHTML = "";
     var rows = state.projects.filter(function (p) {
+      if (state.filterRmo !== "all" && (p.rmo || "") !== state.filterRmo) return false;
       if (!q) return true;
-      return [p.estate, p.dmo, p.inspectionDate, p.seName, p.sseName, p.notes].join(" ").toLowerCase().indexOf(q) !== -1;
+      return [p.rmo, p.estate, p.estateZh, p.dmo, p.inspectionDate, p.seName, p.sseName, p.notes].join(" ").toLowerCase().indexOf(q) !== -1;
     });
     $("projectsEmpty").hidden = rows.length > 0;
     $("projectsEmpty").textContent = t("emptyProjects");
@@ -828,11 +842,11 @@
 
       var ic = document.createElement("div");
       ic.className = "card-icon";
-      ic.textContent = (proj.dmo || proj.estate || "HD").slice(0, 3).toUpperCase();
+      ic.textContent = (proj.rmo || proj.dmo || proj.estate || "HD").slice(0, 3).toUpperCase();
 
       var body = document.createElement("div");
       var h = document.createElement("h3");
-      h.textContent = (proj.dmo ? "[" + proj.dmo + "] " : "") + proj.estate;
+      h.textContent = (proj.rmo ? "[" + proj.rmo + "] " : "") + proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "");
       var meta = document.createElement("div");
       meta.className = "meta";
       meta.textContent = fmtDateDisplay(proj.inspectionDate) + " · " + els.length + " " + t("elemCount") + " · " + phCount + " " + t("photosCount") + (proj.seName ? " · SE: " + proj.seName : "");
@@ -862,13 +876,19 @@
   function openProjectModal(proj) {
     $("projModalTitle").textContent = proj ? t("projModalEdit") : t("projModalNew");
     $("fieldProjId").value = proj ? proj.id : "";
+    $("fieldProjRmo").value = proj ? (proj.rmo || "") : (state.filterRmo !== "all" ? state.filterRmo : "");
     $("fieldProjDmo").value = proj ? (proj.dmo || "") : "";
     $("fieldProjEstate").value = proj ? (proj.estate || "") : "";
+    $("fieldProjEstate").dataset.zh = proj ? (proj.estateZh || "") : "";
     $("fieldProjDate").value = proj ? (proj.inspectionDate || todayYmd()) : todayYmd();
     $("fieldProjHandover").value = proj ? (proj.handoverDate || "") : "";
+    $("fieldProjNature").value = proj ? (proj.nature || "") : "";
     $("fieldProjSe").value = proj ? (proj.seName || "") : "";
     $("fieldProjSse").value = proj ? (proj.sseName || "") : "";
     $("fieldProjNotes").value = proj ? (proj.notes || "") : "";
+    state.pendingEstateCoords = proj && hasCoords(proj.estateGps) ? Object.assign({}, proj.estateGps) : null;
+    $("autofillBanner").hidden = true;
+    $("estateAcList").hidden = true;
     $("projectModal").hidden = false;
     $("fieldProjEstate").focus();
   }
@@ -882,8 +902,12 @@
       id: id,
       createdAt: existing ? existing.createdAt : new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      rmo: $("fieldProjRmo").value.trim(),
       dmo: $("fieldProjDmo").value.trim(),
       estate: estate,
+      estateZh: $("fieldProjEstate").dataset.zh || (existing ? existing.estateZh || "" : ""),
+      nature: $("fieldProjNature").value.trim(),
+      estateGps: state.pendingEstateCoords || (existing ? existing.estateGps || null : null),
       inspectionDate: $("fieldProjDate").value || todayYmd(),
       handoverDate: $("fieldProjHandover").value.trim(),
       seName: $("fieldProjSe").value.trim(),
@@ -911,10 +935,10 @@
     var allEls = elementsOf(proj.id);
     var phTotal = photosOfProject(proj.id).length;
     $("crumbProjectName").textContent = proj.estate;
-    $("heroEstateTitle").textContent = (proj.dmo ? "[" + proj.dmo + "] " : "") + proj.estate;
+    $("heroEstateTitle").textContent = (proj.rmo ? "[" + proj.rmo + "] " : "") + proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "");
     $("heroEstateMeta").textContent =
       fmtDateDisplay(proj.inspectionDate) +
-      (proj.handoverDate ? " · Handover: " + proj.handoverDate : "") +
+      (proj.dmo ? " · " + proj.dmo : "") + (proj.handoverDate ? " · Handover: " + proj.handoverDate : "") + (proj.nature ? " · " + proj.nature : "") +
       (proj.seName ? " · SE: " + proj.seName : "") +
       (proj.sseName ? " · SSE: " + proj.sseName : "") +
       " · " + allEls.length + " " + t("elemCount") + " · " + phTotal + " " + t("photosCount");
@@ -1299,12 +1323,14 @@
   function openMapPicker() {
     if (typeof L === "undefined") { toast(t("mapHintOffline")); return; }
     $("pickerModal").hidden = false;
-    var la = hasCoords(state.currentGps) ? state.currentGps.lat : 22.3193;
-    var ln = hasCoords(state.currentGps) ? state.currentGps.lng : 114.1694;
+    var curProj = getProject(state.currentProjectId);
+    var fallbackGps = curProj && hasCoords(curProj.estateGps) ? curProj.estateGps : null;
+    var la = hasCoords(state.currentGps) ? state.currentGps.lat : (fallbackGps ? fallbackGps.lat : 22.3193);
+    var ln = hasCoords(state.currentGps) ? state.currentGps.lng : (fallbackGps ? fallbackGps.lng : 114.1694);
     state.pickerLatLng = { lat: la, lng: ln };
     setTimeout(function () {
       if (state.pickerMap) { state.pickerMap.remove(); state.pickerMap = null; }
-      state.pickerMap = L.map("pickerMap").setView([la, ln], hasCoords(state.currentGps) ? 17 : 12);
+      state.pickerMap = L.map("pickerMap").setView([la, ln], (hasCoords(state.currentGps) || fallbackGps) ? 16 : 12);
       createBasemapLayer().addTo(state.pickerMap);
       state.pickerMarker = L.marker([la, ln]).addTo(state.pickerMap);
       state.pickerMap.on("click", function (e) { state.pickerLatLng = { lat: e.latlng.lat, lng: e.latlng.lng }; state.pickerMarker.setLatLng(e.latlng); });
@@ -1337,7 +1363,7 @@
       '<div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span>' + xmlEsc(idxLabel) + '</span><span>Appendix X</span></div>' +
       '<h3>HOUSING DEPARTMENT</h3><h3>ESTATE MANAGEMENT DIVISION</h3><h3>SUMMARY REPORT OF STRUCTURAL INSPECTION</h3>' +
       '<table class="report-meta">' +
-      '<tr><td><strong>DMO:</strong> ' + xmlEsc(proj.dmo || "-") + '</td><td><strong>Estate:</strong> ' + xmlEsc(proj.estate || "-") + '</td><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td></tr>' +
+      '<tr><td><strong>RMO / DMO:</strong> ' + xmlEsc((proj.rmo ? proj.rmo + " · " : "") + (proj.dmo || "-")) + '</td><td><strong>Estate:</strong> ' + xmlEsc((proj.estate || "-") + (proj.estateZh ? " (" + proj.estateZh + ")" : "")) + '</td><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td></tr>' +
       '<tr><td colspan="2"><strong>Inspected Structure:</strong> ' + xmlEsc(el.name + (el.location ? " (" + el.location + ")" : "")) + '</td><td><strong>Handover Date:</strong> ' + xmlEsc(proj.handoverDate || "-") + '</td></tr>' +
       '</table>' +
       '<p style="font-size:0.75rem;margin-bottom:5px;">* For ratings (4) poor / (5) severe, the Assessment Engineer shall elaborate the structural conditions in the Remarks and draw his/her SSE\'s attention.</p>' +
@@ -1374,7 +1400,7 @@
       '<h3>HOUSING DEPARTMENT — ESTATE MANAGEMENT DIVISION</h3>' +
       '<h3 style="font-size:1.15rem;margin:6px 0 12px;">ESTATE STRUCTURAL INSPECTION REPORT</h3>' +
       '<table class="report-meta">' +
-      '<tr><td><strong>DMO:</strong> ' + xmlEsc(proj.dmo || "-") + '</td><td><strong>Estate:</strong> ' + xmlEsc(proj.estate) + '</td></tr>' +
+      '<tr><td><strong>RMO / DMO:</strong> ' + xmlEsc((proj.rmo ? proj.rmo + " · " : "") + (proj.dmo || "-")) + '</td><td><strong>Estate:</strong> ' + xmlEsc(proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "")) + '</td></tr>' +
       '<tr><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td><td><strong>Handover Date:</strong> ' + xmlEsc(proj.handoverDate || "-") + '</td></tr>' +
       '<tr><td><strong>Reported by SE:</strong> ' + xmlEsc(proj.seName || "-") + '</td><td><strong>Endorsed by SSE:</strong> ' + xmlEsc(proj.sseName || "-") + '</td></tr>' +
       '<tr><td><strong>Total Elements Inspected:</strong> ' + els.length + '</td><td><strong>SSE Attention (Rating 4–5):</strong> <strong style="color:' + (sseCount ? '#b42318' : '#157a4b') + ';">' + sseCount + '</strong></td></tr>' +
@@ -1417,7 +1443,7 @@
     $("exportStatus").textContent = t("exporting");
     try {
       var zip = new JSZip();
-      var header = ["Project ID", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Max Rating", "SSE Attention"];
+      var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Max Rating", "SSE Attention"];
       ALL_ITEMS.forEach(function (it) { header.push(it.code + " " + it.en); });
       header.push("4.3 Others", "5.1 Remarks", "Condition", "External Works", "Element GPS", "Photo Count");
 
@@ -1430,7 +1456,7 @@
           var phs = photosOfElement(el.id);
           var mr = maxRatingOf(el.ratings);
           var row = [
-            proj.id, proj.dmo || "", proj.estate, proj.inspectionDate, proj.handoverDate || "", proj.seName || "", proj.sseName || "",
+            proj.id, proj.rmo || "", proj.dmo || "", proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : ""), proj.inspectionDate, proj.handoverDate || "", proj.seName || "", proj.sseName || "",
             String(idx + 1), el.name, el.location || "", elemStatusOf(el), mr || "", mr >= 4 ? "YES" : "NO"
           ];
           ALL_ITEMS.forEach(function (it) { row.push((el.ratings && el.ratings[it.code]) || ""); });
@@ -1488,6 +1514,48 @@
     el.textContent = summary;
   }
 
+
+  function renderEstateAutocomplete() {
+    var list = $("estateAcList");
+    var master = window.ESTATES_MASTER || [];
+    var rmo = $("fieldProjRmo").value || "";
+    var q = ($("fieldProjEstate").value || "").trim().toLowerCase();
+    var matches = master.filter(function (e) {
+      if (rmo && e.r && e.r !== rmo) return false;
+      if (!q) return !!rmo;
+      return (e.n + " " + e.z + " " + e.c + " " + e.d).toLowerCase().indexOf(q) !== -1;
+    }).slice(0, 30);
+
+    if (!matches.length) { list.hidden = true; return; }
+    list.innerHTML = "";
+    matches.forEach(function (e) {
+      var item = document.createElement("div");
+      item.className = "ac-item";
+      item.innerHTML = '<div><strong>' + xmlEsc(e.n) + (e.z ? ' · ' + xmlEsc(e.z) : '') + '</strong>' +
+        '<small>' + xmlEsc([e.d, e.t, e.h ? 'Handover ' + e.h : ''].filter(Boolean).join(' · ')) + '</small></div>' +
+        (e.r ? '<span class="ac-tag">' + xmlEsc(e.r) + '</span>' : '');
+      item.addEventListener("mousedown", function (ev) {
+        ev.preventDefault();
+        applyEstateMasterItem(e);
+      });
+      list.appendChild(item);
+    });
+    list.hidden = false;
+  }
+
+  function applyEstateMasterItem(e) {
+    $("fieldProjEstate").value = e.n;
+    $("fieldProjEstate").dataset.zh = e.z || "";
+    if (e.r) $("fieldProjRmo").value = e.r;
+    $("fieldProjDmo").value = e.d || "";
+    $("fieldProjHandover").value = e.h || "";
+    $("fieldProjNature").value = [e.t, e.m, e.c].filter(Boolean).join(" / ");
+    state.pendingEstateCoords = (e.la != null && e.ln != null) ? { lat: e.la, lng: e.ln, accuracy: null, source: "master" } : null;
+    $("autofillBanner").textContent = t("autofillMsg") + (e.r ? "[" + e.r + "] " : "") + e.n + (e.z ? " (" + e.z + ")" : "") + (e.h ? " · Handover " + e.h : "");
+    $("autofillBanner").hidden = false;
+    $("estateAcList").hidden = true;
+  }
+
   /* ---------- Event Binding ---------- */
   function bind() {
     document.querySelectorAll(".tab").forEach(function (btn) {
@@ -1503,6 +1571,25 @@
       if (state.tab === "map") renderMap();
     });
     $("searchProjInput").addEventListener("input", renderProjects);
+    document.querySelectorAll("#rmoFilterBar .rmo-chip").forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        state.filterRmo = chip.getAttribute("data-rmo");
+        document.querySelectorAll("#rmoFilterBar .rmo-chip").forEach(function (c) { c.classList.toggle("is-active", c === chip); });
+        renderProjects();
+      });
+    });
+    $("fieldProjEstate").addEventListener("input", function () {
+      $("fieldProjEstate").dataset.zh = "";
+      renderEstateAutocomplete();
+    });
+    $("fieldProjEstate").addEventListener("focus", renderEstateAutocomplete);
+    $("fieldProjRmo").addEventListener("change", function () {
+      if (document.activeElement === $("fieldProjRmo")) renderEstateAutocomplete();
+    });
+    $("fieldProjEstate").addEventListener("blur", function () {
+      setTimeout(function () { $("estateAcList").hidden = true; }, 180);
+    });
+
     $("btnNewProject").addEventListener("click", function () { openProjectModal(null); });
     $("btnEditProject").addEventListener("click", function () { openProjectModal(getProject(state.currentProjectId)); });
     $("btnProjCancel").addEventListener("click", function () { $("projectModal").hidden = true; });
