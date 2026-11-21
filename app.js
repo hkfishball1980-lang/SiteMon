@@ -57,6 +57,38 @@
   CHECKLIST_SCHEMA.forEach(function (sec) { sec.items.forEach(function (it) { ALL_ITEMS.push(it); }); });
   var RATINGS = ["1", "2", "3", "4", "5", "N.A."];
 
+  var STEEL_CODES = ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6"];
+  var SMART_NA_PRESETS = {
+    "Covered Walkway": ["4.1"],
+    "Trellis / Pergola": ["4.1"],
+    "Canopy": ["4.1"],
+    "Pavilion / Gazebo": ["4.1"],
+    "Footbridge": ["4.1"],
+    "Freestanding Lift Tower": ["4.1"],
+    "Noise / Acoustic Barrier": ["4.1", "4.2"],
+    "Boundary / Perimeter Wall & Fencing": ["4.1", "4.2"],
+    "Signage Structure / Entrance Portal": ["4.1", "4.2"],
+    "Hanging Structure": ["4.1"],
+    "Retaining Wall": STEEL_CODES.concat(["4.2"]),
+    "Planter": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Parapet Wall / Railing Parapet": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Screen Wall / Basement Wall": STEEL_CODES.concat(["4.1", "4.2"]),
+    "External Staircase": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Ramp / BFA Ramp": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Paving / Estate Road / EVA": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Man-made Slope": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Surface Drainage Channel": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Underground Drain / Manhole / Catchpit": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Suspended Manhole": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Refuse Collection Point (RCP) / Bin Bay": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Sports / Play Facility": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Street Furniture / Utility Plinth": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Columns / Beams / Slabs": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Cantilevered Projecting Structure": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Transfer Structure": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Exposed Pile Cap": STEEL_CODES.concat(["4.1", "4.2"])
+  };
+
   var I18N = {
     zh: {
       htmlLang: "zh-HK",
@@ -113,6 +145,13 @@
       gpsLoading: "定位中…",
       secChecklistTitle: "HD Appendix X 結構評級（1 良好 – 5 嚴重 / N.A.）",
       fillNa: "未填項設為 N.A.",
+      overallGradeTitle: "一鍵整體評級（免逐項點擊）",
+      skipNaLabel: "跳過已設為 N.A. 的項目",
+      elemPlaceholder: "-- 選擇外部工程 / 結構構件 --",
+      elemCustomOpt: "其他（自行輸入名稱）…",
+      elemCustomPh: "請輸入自訂構建物名稱…",
+      smartNaToast: "已按構建物類型自動將不適用項目預設為 N.A.",
+      overallAppliedToast: "已套用整體評級：",
       clearRatings: "清除評級",
       checklistHint: "評級 1–3 一般至可接受；4 = Poor；5 = Severe。如任何項目為 4 或 5，請於 5.1 Remarks 詳述並提請 SSE 關注。",
       sseAlert: "⚠️ 偵測到評級 4 (Poor) 或 5 (Severe)：請喺下方「5.1 Remarks」詳細說明結構狀況並提請 SSE 關注。",
@@ -250,6 +289,13 @@
       gpsLoading: "Locating…",
       secChecklistTitle: "HD Appendix X Checklist (1 Good – 5 Severe / N.A.)",
       fillNa: "Set Empty to N.A.",
+      overallGradeTitle: "Overall Quick Grading (One-Tap)",
+      skipNaLabel: "Skip N.A. items",
+      elemPlaceholder: "-- Select External Work / Structure --",
+      elemCustomOpt: "Other (Type Custom Name)...",
+      elemCustomPh: "Enter custom structure name...",
+      smartNaToast: "Auto-set irrelevant items to N.A. for this structure",
+      overallAppliedToast: "Applied overall grade: ",
       clearRatings: "Clear Ratings",
       checklistHint: "Ratings 1–3 Acceptable; 4 = Poor; 5 = Severe. For ratings 4 or 5, elaborate in 5.1 Remarks and draw SSE's attention.",
       sseAlert: "⚠️ Rating 4 (Poor) or 5 (Severe) detected: Elaborate structural conditions in 5.1 Remarks and draw SSE's attention.",
@@ -782,6 +828,11 @@
     $("btnPickMapLoc").textContent = p.pickMapLoc;
     $("secChecklistTitle").textContent = p.secChecklistTitle;
     $("btnFillNa").textContent = p.fillNa;
+    if ($("lblOverallGrade")) $("lblOverallGrade").textContent = p.overallGradeTitle;
+    if ($("lblSkipNa")) $("lblSkipNa").textContent = p.skipNaLabel;
+    if ($("optElemPlaceholder")) $("optElemPlaceholder").textContent = p.elemPlaceholder;
+    if ($("optElemCustom")) $("optElemCustom").textContent = p.elemCustomOpt;
+    if ($("fieldElemName")) $("fieldElemName").placeholder = p.elemCustomPh;
     $("btnClearRatings").textContent = p.clearRatings;
     $("checklistHint").textContent = p.checklistHint;
     $("secRemarksTitle").textContent = p.secRemarksTitle;
@@ -1144,11 +1195,63 @@
     } else el.textContent = t("noCoords");
   }
 
+  function syncElemSelectFromInput() {
+    var sel = $("fieldElemSelect");
+    var inp = $("fieldElemName");
+    if (!sel || !inp) return;
+    var val = (inp.value || "").trim();
+    if (!val) {
+      sel.value = "";
+      inp.hidden = true;
+      inp.required = false;
+      return;
+    }
+    var found = false;
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === val) { found = true; break; }
+    }
+    if (found) {
+      sel.value = val;
+      inp.hidden = true;
+      inp.required = false;
+    } else {
+      sel.value = "__CUSTOM__";
+      inp.hidden = false;
+      inp.required = true;
+    }
+  }
+
+  function clearOverallQuickHighlight() {
+    var bar = $("overallGradeBar");
+    if (!bar) return;
+    bar.querySelectorAll(".grade-quick-btn").forEach(function (b) {
+      b.classList.remove("is-active");
+    });
+  }
+
+  function applySmartNaPreset(elemType) {
+    var preset = SMART_NA_PRESETS[elemType];
+    if (!preset) return;
+    // Only auto-apply if user has not entered any numeric ratings (1-5) yet
+    var hasNumeric = Object.keys(state.currentRatings).some(function (k) {
+      var v = state.currentRatings[k];
+      return v && v !== "N.A.";
+    });
+    if (hasNumeric) return;
+    state.currentRatings = {};
+    preset.forEach(function (code) { state.currentRatings[code] = "N.A."; });
+    clearOverallQuickHighlight();
+    updateChecklistSelection();
+    toast(t("smartNaToast"));
+  }
+
   function fillElementForm(el) {
     var proj = getProject(el.projectId);
     $("crumbElemContext").textContent = (proj ? proj.estate + " › " : "") + (el.name || t("addElement"));
     $("fieldElemId").value = el.id;
     $("fieldElemName").value = el.name || "";
+    syncElemSelectFromInput();
+    clearOverallQuickHighlight();
     $("fieldElemLoc").value = el.location || "";
     $("fieldElemStatus").value = elemStatusOf(el);
     $("fieldElemWhen").value = fmtHkt(el.createdAt) + " (HKT)";
@@ -1179,7 +1282,7 @@
     await reloadData();
     fillElementForm(el);
     showTab("element");
-    $("fieldElemName").focus();
+    if ($("fieldElemSelect")) $("fieldElemSelect").focus(); else $("fieldElemName").focus();
     $("elemGpsText").textContent = t("gpsLoading");
     getDeviceGps().then(function (gps) {
       if (state.currentElementId === el.id && !hasCoords(state.currentGps)) {
@@ -1203,7 +1306,7 @@
     var el = getElement(state.currentElementId);
     if (!el) return;
     var name = $("fieldElemName").value.trim();
-    if (!name) { toast(t("needElemName")); $("fieldElemName").focus(); return; }
+    if (!name) { toast(t("needElemName")); if ($("fieldElemName").hidden && $("fieldElemSelect")) $("fieldElemSelect").focus(); else $("fieldElemName").focus(); return; }
     var remarks = $("fieldRemarks").value.trim();
     if (hasSevereRating(state.currentRatings) && !remarks) {
       if (!(await showConfirm(t("sseRemarksConfirm")))) { $("fieldRemarks").focus(); return; }
@@ -2221,7 +2324,40 @@
       ALL_ITEMS.forEach(function (it) { if (!state.currentRatings[it.code]) state.currentRatings[it.code] = "N.A."; });
       updateChecklistSelection();
     });
-    $("btnClearRatings").addEventListener("click", function () { state.currentRatings = {}; updateChecklistSelection(); });
+    $("btnClearRatings").addEventListener("click", function () { state.currentRatings = {}; clearOverallQuickHighlight(); updateChecklistSelection(); });
+    if ($("fieldElemSelect")) {
+      $("fieldElemSelect").addEventListener("change", function () {
+        var val = $("fieldElemSelect").value;
+        var inp = $("fieldElemName");
+        if (val === "__CUSTOM__") {
+          inp.value = "";
+          inp.hidden = false;
+          inp.required = true;
+          inp.focus();
+        } else {
+          inp.value = val;
+          inp.hidden = true;
+          inp.required = false;
+          if (val) applySmartNaPreset(val);
+        }
+      });
+    }
+    if ($("overallGradeBar")) {
+      $("overallGradeBar").addEventListener("click", function (e) {
+        var btn = e.target.closest(".grade-quick-btn");
+        if (!btn) return;
+        var grade = btn.getAttribute("data-grade");
+        var skipNa = $("chkSkipNa") ? $("chkSkipNa").checked : true;
+        clearOverallQuickHighlight();
+        btn.classList.add("is-active");
+        ALL_ITEMS.forEach(function (it) {
+          if (grade !== "N.A." && skipNa && state.currentRatings[it.code] === "N.A.") return;
+          state.currentRatings[it.code] = grade;
+        });
+        updateChecklistSelection();
+        toast(t("overallAppliedToast") + grade);
+      });
+    }
     $("btnRefreshGps").addEventListener("click", async function () {
       $("elemGpsText").textContent = t("gpsLoading");
       var gps = await getDeviceGps();
