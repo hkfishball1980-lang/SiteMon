@@ -465,3 +465,6 @@ body.layout-phone .rating-group { grid-template-columns: repeat(4, 1fr); }
 }
 .yn-btn.is-selected[data-yn="Yes"] { background: var(--danger); border-color: var(--danger); color: #fff; }
 .yn-btn.is-selected[data-yn="No"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+
+.btn-ok { background: var(--ok); color: #fff; border-color: var(--ok); }
+.btn-ok:hover:not(:disabled) { background: #12663e; }

@@ -112,6 +112,8 @@
       pickMapLoc: "地圖點選補位",
       gpsLoading: "定位中…",
       secChecklistTitle: "HD Appendix X 結構評級（G 良好 · F 一般 · S 嚴重 · NA）",
+      fillGood: "✓ 一鍵全部良好 (G)",
+      filledGoodToast: "已全部設為良好 (G)，5.1 維修建議設為 No",
       fillNa: "未填項設為 NA",
       clearRatings: "清除評級",
       checklistHint: "Rank：G = Good（良好）、F = Fair（一般）、S = Severe（嚴重）、NA = 不適用。如任何項目為 S，請於 5.2 Remarks 詳述並提請 SSE 關注。",
@@ -250,6 +252,8 @@
       pickMapLoc: "Pick on Map",
       gpsLoading: "Locating…",
       secChecklistTitle: "HD Appendix X Checklist (G Good · F Fair · S Severe · NA)",
+      fillGood: "✓ All Good (G)",
+      filledGoodToast: "All items set to Good (G) & Repair set to No",
       fillNa: "Set Empty to NA",
       clearRatings: "Clear Ratings",
       checklistHint: "Rank: G - Good, F - Fair, S - Severe, NA - Not Applicable. For ratings (S) severe, elaborate in 5.2 Remarks and draw SSE's attention.",
@@ -745,7 +749,7 @@
   function applyLang() {
     var p = I18N[state.lang];
     document.documentElement.lang = p.htmlLang;
-    document.title = p.title + " v3.5";
+    document.title = p.title + " v3.6";
     $("appTitle").textContent = p.title;
     $("appTagline").textContent = p.tagline;
     $("btnLang").textContent = p.langBtn;
@@ -795,6 +799,7 @@
     $("btnRefreshGps").textContent = p.refreshGps;
     $("btnPickMapLoc").textContent = p.pickMapLoc;
     $("secChecklistTitle").textContent = p.secChecklistTitle;
+    $("btnFillGood").textContent = p.fillGood;
     $("btnFillNa").textContent = p.fillNa;
     $("btnClearRatings").textContent = p.clearRatings;
     $("checklistHint").textContent = p.checklistHint;
@@ -2251,6 +2256,20 @@
       await reloadData(); toast(t("deleted")); showTab("projectDetail");
     });
     $("btnElemReport").addEventListener("click", function () { openSingleElementReport(state.currentElementId); });
+    $("btnFillGood").addEventListener("click", function () {
+      ALL_ITEMS.forEach(function (it) {
+        if (it.hasCustomText && !(state.currentOthersText || "").trim()) {
+          state.currentRatings[it.code] = "NA";
+        } else {
+          state.currentRatings[it.code] = "G";
+        }
+      });
+      state.currentRepairRec = "No";
+      $("fieldElemStatus").value = "normal";
+      updateRepairButtons();
+      updateChecklistSelection();
+      toast(t("filledGoodToast"));
+    });
     $("btnFillNa").addEventListener("click", function () {
       ALL_ITEMS.forEach(function (it) { if (!state.currentRatings[it.code]) state.currentRatings[it.code] = "NA"; });
       updateChecklistSelection();
