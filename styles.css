@@ -451,80 +451,17 @@ body.layout-phone.is-forced-phone .tabs {
 .exp-opt small { display: block; font-size: 0.76rem; color: var(--muted); margin-top: 2px; line-height: 1.35; }
 .exp-presets { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 
-/* v3.5 Overall Quick Grading Bar */
-.overall-grade-bar {
-  background: #f0f7f6;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px 14px;
-  margin: 10px 0 14px;
+/* v3.5 Rating Colors: G (Good), F (Fair), S (Severe), NA */
+.rate-btn.is-selected[data-val="G"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+.rate-btn.is-selected[data-val="F"] { background: var(--warn); border-color: var(--warn); color: #fff; }
+.rate-btn.is-selected[data-val="S"] { background: var(--danger); border-color: var(--danger); color: #fff; }
+.rate-btn.is-selected[data-val="NA"] { background: #64748b; border-color: #64748b; color: #fff; }
+body.layout-phone .rating-group { grid-template-columns: repeat(4, 1fr); }
+
+.yn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+.yn-btn {
+  min-width: 84px; height: 40px; border-radius: 10px; border: 1.5px solid var(--line);
+  background: #fff; color: var(--ink); font-weight: 700; cursor: pointer;
 }
-.overall-grade-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
-  font-size: 0.9rem;
-  color: var(--navy);
-}
-.overall-skip-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.82rem;
-  color: var(--muted);
-  cursor: pointer;
-  user-select: none;
-}
-.overall-skip-toggle input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--teal);
-  cursor: pointer;
-}
-.overall-grade-btns {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 8px;
-}
-.grade-quick-btn {
-  min-height: var(--tap, 44px);
-  border-radius: 10px;
-  border: 1.5px solid var(--line);
-  background: var(--card, #fff);
-  color: var(--ink);
-  font-weight: 700;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.grade-quick-btn:hover {
-  border-color: var(--teal);
-}
-.grade-quick-btn.is-active {
-  background: var(--teal);
-  color: #fff;
-  border-color: var(--teal);
-}
-.grade-quick-btn.is-warn.is-active {
-  background: var(--warn);
-  border-color: var(--warn);
-  color: #fff;
-}
-.grade-quick-btn.is-danger.is-active {
-  background: var(--danger);
-  border-color: var(--danger);
-  color: #fff;
-}
-.grade-quick-btn.is-na.is-active {
-  background: var(--muted);
-  border-color: var(--muted);
-  color: #fff;
-}
-@media (max-width: 520px) {
-  .overall-grade-btns {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
+.yn-btn.is-selected[data-yn="Yes"] { background: var(--danger); border-color: var(--danger); color: #fff; }
+.yn-btn.is-selected[data-yn="No"] { background: var(--ok); border-color: var(--ok); color: #fff; }

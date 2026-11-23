@@ -127,49 +127,21 @@
             <div class="form-grid">
               <label class="field">
                 <span id="lblElemName"></span>
-                <select id="fieldElemSelect" required>
-                  <option value="" id="optElemPlaceholder">-- Select External Work / Structure --</option>
-                  <optgroup label="1. Overhead &amp; Shelter Structures">
-                    <option value="Covered Walkway">Covered Walkway</option>
-                    <option value="Trellis / Pergola">Trellis / Pergola</option>
-                    <option value="Canopy">Canopy</option>
-                    <option value="Pavilion / Gazebo">Pavilion / Gazebo</option>
-                    <option value="Footbridge">Footbridge</option>
-                  </optgroup>
-                  <optgroup label="2. Walls, Barriers &amp; Landscaping">
-                    <option value="Planter">Planter</option>
-                    <option value="Parapet Wall / Railing Parapet">Parapet Wall / Railing Parapet</option>
-                    <option value="Retaining Wall">Retaining Wall</option>
-                    <option value="Boundary / Perimeter Wall &amp; Fencing">Boundary / Perimeter Wall &amp; Fencing</option>
-                    <option value="Noise / Acoustic Barrier">Noise / Acoustic Barrier</option>
-                    <option value="Screen Wall / Basement Wall">Screen Wall / Basement Wall</option>
-                  </optgroup>
-                  <optgroup label="3. Access &amp; Circulation">
-                    <option value="External Staircase">External Staircase</option>
-                    <option value="Ramp / BFA Ramp">Ramp / BFA Ramp</option>
-                    <option value="Freestanding Lift Tower">Freestanding Lift Tower</option>
-                    <option value="Paving / Estate Road / EVA">Paving / Estate Road / EVA</option>
-                  </optgroup>
-                  <optgroup label="4. Drainage &amp; Geotechnical">
-                    <option value="Man-made Slope">Man-made Slope</option>
-                    <option value="Surface Drainage Channel">Surface Drainage Channel</option>
-                    <option value="Underground Drain / Manhole / Catchpit">Underground Drain / Manhole / Catchpit</option>
-                    <option value="Suspended Manhole">Suspended Manhole</option>
-                  </optgroup>
-                  <optgroup label="5. Ancillary &amp; Other Structural">
-                    <option value="Signage Structure / Entrance Portal">Signage Structure / Entrance Portal</option>
-                    <option value="Refuse Collection Point (RCP) / Bin Bay">Refuse Collection Point (RCP) / Bin Bay</option>
-                    <option value="Sports / Play Facility">Sports / Play Facility</option>
-                    <option value="Street Furniture / Utility Plinth">Street Furniture / Utility Plinth</option>
-                    <option value="Columns / Beams / Slabs">Columns / Beams / Slabs</option>
-                    <option value="Cantilevered Projecting Structure">Cantilevered Projecting Structure</option>
-                    <option value="Transfer Structure">Transfer Structure</option>
-                    <option value="Hanging Structure">Hanging Structure</option>
-                    <option value="Exposed Pile Cap">Exposed Pile Cap</option>
-                    <option value="__CUSTOM__" id="optElemCustom">Other (Type Custom Name)...</option>
-                  </optgroup>
-                </select>
-                <input type="text" id="fieldElemName" maxlength="160" hidden style="margin-top:8px;">
+                <input type="text" id="fieldElemName" list="structurePresets" required maxlength="160">
+                <datalist id="structurePresets">
+                  <option value="Canopy">
+                  <option value="Covered Walkway Shelter">
+                  <option value="Retaining Wall">
+                  <option value="Columns / Beams / Slabs">
+                  <option value="Staircase">
+                  <option value="Cantilevered Projecting Structure">
+                  <option value="Transfer Structure">
+                  <option value="Suspended Manhole">
+                  <option value="Protective Barriers / Railing Parapets">
+                  <option value="Screen Wall / Basement Wall">
+                  <option value="Hanging Structure">
+                  <option value="Exposed Pile Cap">
+                </datalist>
               </label>
               <label class="field">
                 <span id="lblElemLoc"></span>
@@ -208,31 +180,21 @@
               </div>
             </div>
             <p class="hint" id="checklistHint"></p>
-            <div class="overall-grade-bar" id="overallGradeBar">
-              <div class="overall-grade-head">
-                <strong id="lblOverallGrade">Overall Quick Grading</strong>
-                <label class="overall-skip-toggle">
-                  <input type="checkbox" id="chkSkipNa" checked>
-                  <span id="lblSkipNa">Skip N.A. items</span>
-                </label>
-              </div>
-              <div class="overall-grade-btns" role="group" aria-label="Apply overall rating to checklist">
-                <button type="button" class="grade-quick-btn" data-grade="1">1</button>
-                <button type="button" class="grade-quick-btn" data-grade="2">2</button>
-                <button type="button" class="grade-quick-btn" data-grade="3">3</button>
-                <button type="button" class="grade-quick-btn is-warn" data-grade="4">4</button>
-                <button type="button" class="grade-quick-btn is-danger" data-grade="5">5</button>
-                <button type="button" class="grade-quick-btn is-na" data-grade="N.A.">N.A.</button>
-              </div>
-            </div>
             <div id="checklistContainer"></div>
             <div id="sseAlertBanner" class="sse-alert" hidden></div>
           </div>
 
-          <!-- Remarks & Condition -->
+          <!-- Actions: 5.1 Repair Recommended & 5.2 Remarks -->
           <div class="panel">
             <div class="panel-head"><h2 id="secRemarksTitle"></h2></div>
             <div class="form-grid">
+              <div class="field field-span">
+                <span id="lblRepairRec"></span>
+                <div class="yn-group" id="repairYnGroup">
+                  <button type="button" class="yn-btn" data-yn="Yes" id="btnRepairYes">Yes</button>
+                  <button type="button" class="yn-btn" data-yn="No" id="btnRepairNo">No</button>
+                </div>
+              </div>
               <label class="field field-span">
                 <span id="lblRemarks"></span>
                 <textarea id="fieldRemarks" rows="3" maxlength="4000"></textarea>
