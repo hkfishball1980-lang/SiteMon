@@ -55,7 +55,42 @@
 
   var ALL_ITEMS = [];
   CHECKLIST_SCHEMA.forEach(function (sec) { sec.items.forEach(function (it) { ALL_ITEMS.push(it); }); });
-  var RATINGS = ["G", "F", "S", "NA"];
+  var RATINGS = ["1", "2", "3", "4", "5", "N.A."];
+
+  var STEEL_CODES = ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6"];
+  var SMART_NA_PRESETS = {
+    "Covered Walkway": ["4.1"],
+    "Covered Walkway Shelter": ["4.1"],
+    "Staircase": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Protective Barriers / Railing Parapets": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Trellis / Pergola": ["4.1"],
+    "Canopy": ["4.1"],
+    "Pavilion / Gazebo": ["4.1"],
+    "Footbridge": ["4.1"],
+    "Freestanding Lift Tower": ["4.1"],
+    "Noise / Acoustic Barrier": ["4.1", "4.2"],
+    "Boundary / Perimeter Wall & Fencing": ["4.1", "4.2"],
+    "Signage Structure / Entrance Portal": ["4.1", "4.2"],
+    "Hanging Structure": ["4.1"],
+    "Retaining Wall": STEEL_CODES.concat(["4.2"]),
+    "Planter": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Parapet Wall / Railing Parapet": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Screen Wall / Basement Wall": STEEL_CODES.concat(["4.1", "4.2"]),
+    "External Staircase": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Ramp / BFA Ramp": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Paving / Estate Road / EVA": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Man-made Slope": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Surface Drainage Channel": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Underground Drain / Manhole / Catchpit": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Suspended Manhole": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Refuse Collection Point (RCP) / Bin Bay": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Sports / Play Facility": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Street Furniture / Utility Plinth": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Columns / Beams / Slabs": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Cantilevered Projecting Structure": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Transfer Structure": STEEL_CODES.concat(["4.1", "4.2"]),
+    "Exposed Pile Cap": STEEL_CODES.concat(["4.1", "4.2"])
+  };
 
   var I18N = {
     zh: {
@@ -81,7 +116,7 @@
       deleteProject: "刪除專案",
       searchElem: "搜尋構建物名稱、位置或 Remarks",
       fltAll: "全部",
-      fltSse: "需 SSE 關注 (S)",
+      fltSse: "需 SSE 關注 (4–5)",
       fltFollowup: "跟進中",
       fltNormal: "正常",
       emptyElements: "呢個屋邨專案暫時未有 Structural Element。撳「+ 新增 Structural Element」開始逐項巡查。",
@@ -106,22 +141,27 @@
       elemWhen: "巡查時間（自動）",
       statusNormal: "正常 (Normal)",
       statusFollowup: "跟進中 (Follow-up)",
-      statusSse: "需 SSE 關注 (Rank S)",
+      statusSse: "需 SSE 關注 (Rating 4–5)",
       elemGps: "此構建物定位：",
       refreshGps: "更新 GPS",
       pickMapLoc: "地圖點選補位",
       gpsLoading: "定位中…",
-      secChecklistTitle: "HD Appendix X 結構評級（G 良好 · F 一般 · S 嚴重 · NA）",
-      fillGood: "✓ 一鍵全部良好 (G)",
-      filledGoodToast: "已全部設為良好 (G)，5.1 維修建議設為 No",
-      fillNa: "未填項設為 NA",
+      secChecklistTitle: "HD Appendix X 結構評級（1 良好 – 5 嚴重 / N.A.）",
+      fillNa: "未填項設為 N.A.",
+      overallGradeTitle: "一鍵整體評級（免逐項點擊）",
+      skipNaLabel: "跳過已設為 N.A. 的項目",
+      elemPlaceholder: "-- 選擇外部工程 / 結構構件 --",
+      worksPlaceholder: "-- 選擇 External Works 類別（自動填入下方）--",
+      elemCustomOpt: "其他（自行輸入名稱）…",
+      elemCustomPh: "請輸入自訂構建物名稱…",
+      smartNaToast: "已按構建物類型自動將不適用項目預設為 N.A.",
+      overallAppliedToast: "已套用整體評級：",
       clearRatings: "清除評級",
-      checklistHint: "Rank：G = Good（良好）、F = Fair（一般）、S = Severe（嚴重）、NA = 不適用。如任何項目為 S，請於 5.2 Remarks 詳述並提請 SSE 關注。",
-      sseAlert: "⚠️ 偵測到評級 (S) Severe：請喺下方「5.2 Remarks」詳細說明結構狀況，並提請 SSE 關注。",
+      checklistHint: "評級 1–3 一般至可接受；4 = Poor；5 = Severe。如任何項目為 4 或 5，請於 5.1 Remarks 詳述並提請 SSE 關注。",
+      sseAlert: "⚠️ 偵測到評級 4 (Poor) 或 5 (Severe)：請喺下方「5.1 Remarks」詳細說明結構狀況並提請 SSE 關注。",
       othersPlaceholder: "請輸入 4.3 其他巡查項目名稱…",
-      secRemarksTitle: "5. Actions（5.1 維修建議及 5.2 Remarks）",
-      repairRec: "5.1 Repair is recommended.（建議維修）",
-      remarks: "5.2 Remarks（結構狀況詳述／SSE 關注事項）",
+      secRemarksTitle: "5.1 Remarks 及補充說明",
+      remarks: "5.1 Remarks（結構狀況詳述／SSE 關注事項）",
       condition: "現場現況補充（可選）",
       works: "External works 說明（可選）",
       photos: "此構建物巡查相片",
@@ -137,7 +177,7 @@
       confirmDelProj: "確定刪除成個屋邨專案，連同入面所有 Structural Elements 同相片？此操作無法還原。",
       confirmDelElem: "確定刪除此 Structural Element 同佢所有相片？此操作無法還原。",
       confirmClear: "確定清除呢部裝置上所有專案、構建物同相片？",
-      sseRemarksConfirm: "此構建物有評級 (S) Severe 項目，但「5.2 Remarks」仲係空白。確定照樣儲存？",
+      sseRemarksConfirm: "此構建物有評級 4 或 5 項目，但「5.1 Remarks」仲係空白。確定照樣儲存？",
       saved: "已儲存",
       deleted: "已刪除",
       noCoords: "無坐標",
@@ -196,7 +236,7 @@
       reportPrintNow: "系統列印",
       close: "關閉",
       simplePlot: "簡易相對位置圖",
-      maxRate: "評級"
+      maxRate: "最高評級"
     },
     en: {
       htmlLang: "en",
@@ -221,7 +261,7 @@
       deleteProject: "Delete Project",
       searchElem: "Search element name, location, or remarks",
       fltAll: "All",
-      fltSse: "SSE Attention (S)",
+      fltSse: "SSE Attention (4–5)",
       fltFollowup: "Follow-up",
       fltNormal: "Normal",
       emptyElements: "No structural elements in this project yet. Tap “+ Add Structural Element” to begin.",
@@ -246,22 +286,27 @@
       elemWhen: "Inspected At (Auto)",
       statusNormal: "Normal",
       statusFollowup: "Follow-up",
-      statusSse: "SSE Attention (Rank S)",
+      statusSse: "SSE Attention (Rating 4–5)",
       elemGps: "Element Location:",
       refreshGps: "Refresh GPS",
       pickMapLoc: "Pick on Map",
       gpsLoading: "Locating…",
-      secChecklistTitle: "HD Appendix X Checklist (G Good · F Fair · S Severe · NA)",
-      fillGood: "✓ All Good (G)",
-      filledGoodToast: "All items set to Good (G) & Repair set to No",
-      fillNa: "Set Empty to NA",
+      secChecklistTitle: "HD Appendix X Checklist (1 Good – 5 Severe / N.A.)",
+      fillNa: "Set Empty to N.A.",
+      overallGradeTitle: "Overall Quick Grading (One-Tap)",
+      skipNaLabel: "Skip N.A. items",
+      elemPlaceholder: "-- Select External Work / Structure --",
+      worksPlaceholder: "-- Select External Works Type (Auto-fill below) --",
+      elemCustomOpt: "Other (Type Custom Name)...",
+      elemCustomPh: "Enter custom structure name...",
+      smartNaToast: "Auto-set irrelevant items to N.A. for this structure",
+      overallAppliedToast: "Applied overall grade: ",
       clearRatings: "Clear Ratings",
-      checklistHint: "Rank: G - Good, F - Fair, S - Severe, NA - Not Applicable. For ratings (S) severe, elaborate in 5.2 Remarks and draw SSE's attention.",
-      sseAlert: "⚠️ Rating (S) Severe detected: Elaborate structural conditions in 5.2 Remarks and draw SSE's attention.",
+      checklistHint: "Ratings 1–3 Acceptable; 4 = Poor; 5 = Severe. For ratings 4 or 5, elaborate in 5.1 Remarks and draw SSE's attention.",
+      sseAlert: "⚠️ Rating 4 (Poor) or 5 (Severe) detected: Elaborate structural conditions in 5.1 Remarks and draw SSE's attention.",
       othersPlaceholder: "Specify 4.3 Others item…",
-      secRemarksTitle: "5. Actions (5.1 Repair & 5.2 Remarks)",
-      repairRec: "5.1 Repair is recommended. (Yes / No)",
-      remarks: "5.2 Remarks (Elaboration / SSE Attention)",
+      secRemarksTitle: "5.1 Remarks & Notes",
+      remarks: "5.1 Remarks (Elaboration / SSE Attention)",
       condition: "Current Condition (Optional)",
       works: "External Works Description (Optional)",
       photos: "Element Inspection Photos",
@@ -277,7 +322,7 @@
       confirmDelProj: "Delete this entire Estate Project along with all its Structural Elements and photos? Cannot be undone.",
       confirmDelElem: "Delete this Structural Element and its photos? Cannot be undone.",
       confirmClear: "Clear all projects, elements, and photos on this device?",
-      sseRemarksConfirm: "This element has rating (S) Severe items, but 5.2 Remarks is empty. Save anyway?",
+      sseRemarksConfirm: "This element has rating 4 or 5 items, but 5.1 Remarks is empty. Save anyway?",
       saved: "Saved",
       deleted: "Deleted",
       noCoords: "No coordinates",
@@ -336,7 +381,7 @@
       reportPrintNow: "System Print",
       close: "Close",
       simplePlot: "Simple Relative Plot",
-      maxRate: "Rank"
+      maxRate: "Max Rating"
     }
   };
 
@@ -356,7 +401,6 @@
     isNewElementUnsaved: false,
     currentRatings: {},
     currentOthersText: "",
-    currentRepairRec: "",
     currentGps: null,
     map: null,
     tileLayer: null,
@@ -415,26 +459,15 @@
   function fmtCoord(lat, lng) {
     return hasCoords({ lat: lat, lng: lng }) ? lat.toFixed(6) + ", " + lng.toFixed(6) : t("noCoords");
   }
-  function rankSeverity(val) {
-    if (val === "S" || val === "5" || val === "4") return 3;
-    if (val === "F" || val === "3") return 2;
-    if (val === "G" || val === "2" || val === "1") return 1;
-    return 0;
-  }
-  function worstRankOf(ratings) {
-    var best = 0, label = "";
+  function maxRatingOf(ratings) {
+    var max = 0;
     Object.keys(ratings || {}).forEach(function (k) {
-      var v = ratings[k];
-      var sev = rankSeverity(v);
-      if (sev > best) {
-        best = sev;
-        label = sev === 3 ? "S" : (sev === 2 ? "F" : "G");
-      }
+      var n = parseInt(ratings[k], 10);
+      if (!isNaN(n) && n > max) max = n;
     });
-    return label;
+    return max;
   }
-  function maxRatingOf(ratings) { return worstRankOf(ratings); }
-  function hasSevereRating(ratings) { return worstRankOf(ratings) === "S"; }
+  function hasSevereRating(ratings) { return maxRatingOf(ratings) >= 4; }
   function elemStatusOf(el) { return el.status || (hasSevereRating(el.ratings) ? "sse" : "normal"); }
 
   function showConfirm(msg) {
@@ -749,7 +782,7 @@
   function applyLang() {
     var p = I18N[state.lang];
     document.documentElement.lang = p.htmlLang;
-    document.title = p.title + " v3.6";
+    document.title = p.title + " v3.5.1";
     $("appTitle").textContent = p.title;
     $("appTagline").textContent = p.tagline;
     $("btnLang").textContent = p.langBtn;
@@ -799,12 +832,16 @@
     $("btnRefreshGps").textContent = p.refreshGps;
     $("btnPickMapLoc").textContent = p.pickMapLoc;
     $("secChecklistTitle").textContent = p.secChecklistTitle;
-    $("btnFillGood").textContent = p.fillGood;
     $("btnFillNa").textContent = p.fillNa;
+    if ($("lblOverallGrade")) $("lblOverallGrade").textContent = p.overallGradeTitle;
+    if ($("lblSkipNa")) $("lblSkipNa").textContent = p.skipNaLabel;
+    if ($("optElemPlaceholder")) $("optElemPlaceholder").textContent = p.elemPlaceholder;
+    if ($("optWorksPlaceholder")) $("optWorksPlaceholder").textContent = p.worksPlaceholder;
+    if ($("optElemCustom")) $("optElemCustom").textContent = p.elemCustomOpt;
+    if ($("fieldElemName")) $("fieldElemName").placeholder = p.elemCustomPh;
     $("btnClearRatings").textContent = p.clearRatings;
     $("checklistHint").textContent = p.checklistHint;
     $("secRemarksTitle").textContent = p.secRemarksTitle;
-    $("lblRepairRec").textContent = p.repairRec;
     $("lblRemarks").textContent = p.remarks;
     $("lblCondition").textContent = p.condition;
     $("lblWorks").textContent = p.works;
@@ -1069,18 +1106,12 @@
       sb.textContent = st === "sse" ? t("fltSse") : st === "followup" ? t("fltFollowup") : t("fltNormal");
       badges.appendChild(sb);
 
-      var wr = worstRankOf(el.ratings);
-      if (wr) {
+      var mr = maxRatingOf(el.ratings);
+      if (mr > 0) {
         var rb = document.createElement("span");
-        rb.className = "badge " + (wr === "S" ? "badge-danger" : wr === "F" ? "badge-warn" : "badge-ok");
-        rb.textContent = t("maxRate") + ": " + wr;
+        rb.className = "badge " + (mr >= 5 ? "badge-danger" : mr >= 4 ? "badge-warn" : "badge-neutral");
+        rb.textContent = t("maxRate") + " " + mr;
         badges.appendChild(rb);
-      }
-      if (el.repairRecommended === "Yes") {
-        var repB = document.createElement("span");
-        repB.className = "badge badge-danger";
-        repB.textContent = state.lang === "zh" ? "建議維修" : "Repair: Yes";
-        badges.appendChild(repB);
       }
       var hasGps = hasCoords(el.gps) || photos.some(function (p) { return hasCoords(p); });
       var gb = document.createElement("span");
@@ -1156,13 +1187,6 @@
     });
     updateSseBanner();
   }
-
-  function updateRepairButtons() {
-    document.querySelectorAll("#repairYnGroup .yn-btn").forEach(function (b) {
-      b.classList.toggle("is-selected", b.getAttribute("data-yn") === state.currentRepairRec);
-    });
-  }
-
   function updateSseBanner() {
     var sev = hasSevereRating(state.currentRatings);
     $("sseAlertBanner").hidden = !sev;
@@ -1177,21 +1201,72 @@
     } else el.textContent = t("noCoords");
   }
 
+  function syncElemSelectFromInput() {
+    var sel = $("fieldElemSelect");
+    var inp = $("fieldElemName");
+    if (!sel || !inp) return;
+    var val = (inp.value || "").trim();
+    if (!val) {
+      sel.value = "";
+      inp.hidden = true;
+      inp.required = false;
+      return;
+    }
+    var found = false;
+    for (var i = 0; i < sel.options.length; i++) {
+      if (sel.options[i].value === val) { found = true; break; }
+    }
+    if (found) {
+      sel.value = val;
+      inp.hidden = true;
+      inp.required = false;
+    } else {
+      sel.value = "__CUSTOM__";
+      inp.hidden = false;
+      inp.required = true;
+    }
+  }
+
+  function clearOverallQuickHighlight() {
+    var bar = $("overallGradeBar");
+    if (!bar) return;
+    bar.querySelectorAll(".grade-quick-btn").forEach(function (b) {
+      b.classList.remove("is-active");
+    });
+  }
+
+  function applySmartNaPreset(elemType) {
+    var preset = SMART_NA_PRESETS[elemType];
+    if (!preset) return;
+    // Only auto-apply if user has not entered any numeric ratings (1-5) yet
+    var hasNumeric = Object.keys(state.currentRatings).some(function (k) {
+      var v = state.currentRatings[k];
+      return v && v !== "N.A.";
+    });
+    if (hasNumeric) return;
+    state.currentRatings = {};
+    preset.forEach(function (code) { state.currentRatings[code] = "N.A."; });
+    clearOverallQuickHighlight();
+    updateChecklistSelection();
+    toast(t("smartNaToast"));
+  }
+
   function fillElementForm(el) {
     var proj = getProject(el.projectId);
     $("crumbElemContext").textContent = (proj ? proj.estate + " › " : "") + (el.name || t("addElement"));
     $("fieldElemId").value = el.id;
     $("fieldElemName").value = el.name || "";
+    syncElemSelectFromInput();
+    clearOverallQuickHighlight();
     $("fieldElemLoc").value = el.location || "";
     $("fieldElemStatus").value = elemStatusOf(el);
     $("fieldElemWhen").value = fmtHkt(el.createdAt) + " (HKT)";
     $("fieldRemarks").value = el.remarks || "";
     $("fieldCondition").value = el.condition || "";
     $("fieldWorks").value = el.externalWorks || "";
+    if ($("fieldWorksSelect")) $("fieldWorksSelect").value = "";
     state.currentRatings = Object.assign({}, el.ratings || {});
     state.currentOthersText = el.othersText || "";
-    state.currentRepairRec = el.repairRecommended || "";
-    updateRepairButtons();
     state.currentGps = el.gps ? Object.assign({}, el.gps) : null;
     $("btnDeleteElem").hidden = !!el.isDraft;
     $("btnElemReport").hidden = !!el.isDraft;
@@ -1205,7 +1280,7 @@
     var el = {
       id: uid(), projectId: state.currentProjectId,
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-      name: "", location: "", status: "normal", ratings: {}, othersText: "", repairRecommended: "",
+      name: "", location: "", status: "normal", ratings: {}, othersText: "",
       remarks: "", condition: "", externalWorks: "", gps: null, isDraft: true
     };
     state.currentElementId = el.id;
@@ -1214,7 +1289,7 @@
     await reloadData();
     fillElementForm(el);
     showTab("element");
-    $("fieldElemName").focus();
+    if ($("fieldElemSelect")) $("fieldElemSelect").focus(); else $("fieldElemName").focus();
     $("elemGpsText").textContent = t("gpsLoading");
     getDeviceGps().then(function (gps) {
       if (state.currentElementId === el.id && !hasCoords(state.currentGps)) {
@@ -1238,7 +1313,7 @@
     var el = getElement(state.currentElementId);
     if (!el) return;
     var name = $("fieldElemName").value.trim();
-    if (!name) { toast(t("needElemName")); $("fieldElemName").focus(); return; }
+    if (!name) { toast(t("needElemName")); if ($("fieldElemName").hidden && $("fieldElemSelect")) $("fieldElemSelect").focus(); else $("fieldElemName").focus(); return; }
     var remarks = $("fieldRemarks").value.trim();
     if (hasSevereRating(state.currentRatings) && !remarks) {
       if (!(await showConfirm(t("sseRemarksConfirm")))) { $("fieldRemarks").focus(); return; }
@@ -1250,7 +1325,6 @@
       status: $("fieldElemStatus").value,
       ratings: Object.assign({}, state.currentRatings),
       othersText: state.currentOthersText.trim(),
-      repairRecommended: state.currentRepairRec || "",
       remarks: remarks,
       condition: $("fieldCondition").value.trim(),
       externalWorks: $("fieldWorks").value.trim(),
@@ -1439,12 +1513,14 @@
     var ratings = el.ratings || {};
     var rowsHtml = "";
     CHECKLIST_SCHEMA.forEach(function (sec) {
-      rowsHtml += '<tr><th colspan="3">' + xmlEsc(sec.sectionEn) + '</th></tr>';
+      rowsHtml += '<tr><th colspan="8">' + xmlEsc(sec.sectionEn) + '</th></tr>';
       sec.items.forEach(function (item) {
         var label = item.en + (item.hasCustomText && el.othersText ? " : " + el.othersText : "");
-        var chosen = ratings[item.code] || "-";
-        var style = chosen === "S" ? 'color:#b42318;font-weight:700;background:#fef2f2;' : (chosen === "F" ? 'color:#b45309;font-weight:700;background:#fffbeb;' : (chosen === "G" ? 'color:#157a4b;font-weight:700;' : ''));
-        rowsHtml += '<tr><td>' + item.code + '</td><td>' + xmlEsc(label) + '</td><td style="text-align:center;width:72px;' + style + '">' + xmlEsc(chosen) + '</td></tr>';
+        var chosen = ratings[item.code] || "";
+        var cols = RATINGS.map(function (r) {
+          return '<td style="text-align:center;">' + (chosen === r ? '<span class="circled">' + r + '</span>' : r) + '</td>';
+        }).join("");
+        rowsHtml += '<tr><td>' + item.code + '</td><td>' + xmlEsc(label) + '</td>' + cols + '</tr>';
       });
     });
     var photosHtml = photos.length ? '<div class="report-photos">' + photos.map(function (p, i) {
@@ -1485,9 +1561,8 @@
       var mr = maxRatingOf(el.ratings);
       var ph = photosOfElement(el.id).length;
       return '<tr><td>' + (i + 1) + '</td><td><strong>' + xmlEsc(el.name) + '</strong>' + (el.location ? '<br><small>' + xmlEsc(el.location) + '</small>' : '') + '</td>' +
-        '<td style="text-align:center;font-weight:700;">' + (mr || "-") + '</td>' +
-        '<td style="text-align:center;">' + xmlEsc(el.repairRecommended || "-") + '</td>' +
-        '<td style="text-align:center;">' + (mr === "S" ? '<strong style="color:#b42318;">SSE Attention (S)</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
+        '<td style="text-align:center;">' + (mr || "-") + '</td>' +
+        '<td style="text-align:center;">' + (mr >= 4 ? '<strong style="color:#b42318;">SSE Attention</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
         '<td style="text-align:center;">' + ph + '</td>' +
         '<td>' + xmlEsc(el.remarks || "-") + '</td></tr>';
     }).join("");
@@ -1499,11 +1574,11 @@
       '<table class="report-meta">' +
       '<tr><td><strong>RMO / DMO:</strong> ' + xmlEsc((proj.rmo ? proj.rmo + " · " : "") + (proj.dmo || "-")) + '</td><td><strong>Estate:</strong> ' + xmlEsc(proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "")) + '</td></tr>' +
       '<tr><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td><td><strong>Handover Date:</strong> ' + xmlEsc(proj.handoverDate || "-") + '</td></tr>' +
-      '<tr><td><strong>Total Elements Inspected:</strong> ' + els.length + '</td><td><strong>SSE Attention (Rank S):</strong> <strong style="color:' + (sseCount ? '#b42318' : '#157a4b') + ';">' + sseCount + '</strong></td></tr>' +
+      '<tr><td><strong>Total Elements Inspected:</strong> ' + els.length + '</td><td><strong>SSE Attention (Rating 4–5):</strong> <strong style="color:' + (sseCount ? '#b42318' : '#157a4b') + ';">' + sseCount + '</strong></td></tr>' +
       '</table>' +
       (proj.notes ? '<p style="font-size:0.84rem;margin:6px 0;"><strong>Project Notes:</strong> ' + xmlEsc(proj.notes) + '</p>' : '') +
       '<h4 style="margin:10px 0 6px;font-size:0.9rem;">Summary of Inspected Structural Elements</h4>' +
-      '<table class="report-table"><tr><th>#</th><th>Structural Element & Location</th><th>Rank</th><th>Repair</th><th>Status</th><th>Photos</th><th>5.2 Remarks</th></tr>' +
+      '<table class="report-table"><tr><th>#</th><th>Structural Element & Location</th><th>Max Rating</th><th>Status</th><th>Photos</th><th>5.1 Remarks</th></tr>' +
       summaryRows + '</table>' +
       '<table class="report-meta" style="margin-top:16px;">' +
       '<tr><td style="width:50%;"><strong>Reported by SE:</strong><br><br>Signature: _______________________<br><br>Name: ' + xmlEsc(proj.seName || "_______________________") + '<br>Date: ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td>' +
@@ -1684,7 +1759,7 @@
     drawCell(ctx, M + W / 2, y, W / 2, rowH, "Handover Date: " + (proj.handoverDate || "-"), { size: 19 });
     y += rowH;
     drawCell(ctx, M, y, W / 2, rowH, "Total Elements Inspected: " + els.length, { size: 19, bold: true });
-    drawCell(ctx, M + W / 2, y, W / 2, rowH, "SSE Attention (Rank S): " + sseCount, { size: 19, bold: true, color: sseCount ? "#b42318" : "#157a4b" });
+    drawCell(ctx, M + W / 2, y, W / 2, rowH, "SSE Attention (Rating 4-5): " + sseCount, { size: 19, bold: true, color: sseCount ? "#b42318" : "#157a4b" });
     y += rowH + 18;
 
     if (proj.notes) {
@@ -1698,8 +1773,8 @@
     y += 32;
 
     // Table Header
-    var cols = [45, 290, 80, 90, 155, 75, 385];
-    var hdrs = ["#", "Structural Element & Location", "Rank", "Repair", "Status", "Photos", "5.2 Remarks"];
+    var cols = [55, 310, 105, 165, 85, 400];
+    var hdrs = ["#", "Structural Element & Location", "Max Rate", "Status", "Photos", "5.1 Remarks"];
     var cx = M;
     for (var i = 0; i < cols.length; i++) {
       drawCell(ctx, cx, y, cols[i], 40, hdrs[i], { size: 17, bold: true, fill: "#e2e8f0", align: i === 0 || i === 2 || i === 4 ? "center" : "left" });
@@ -1721,14 +1796,13 @@
         var el = els[r];
         var mr = maxRatingOf(el.ratings);
         var phCnt = photosOfElement(el.id).length;
-        var stLabel = mr === "S" ? "SSE Attention" : elemStatusOf(el);
+        var stLabel = mr >= 4 ? "SSE Attention" : elemStatusOf(el);
         var rh = 58;
         cx = M;
         var vals = [
           String(r + 1),
           el.name + (el.location ? "\n" + el.location : ""),
-          mr || "-",
-          el.repairRecommended || "-",
+          mr ? String(mr) : "-",
           stLabel,
           String(phCnt),
           el.remarks || "-"
@@ -1736,9 +1810,9 @@
         for (var cIdx = 0; cIdx < cols.length; cIdx++) {
           drawCell(ctx, cx, y, cols[cIdx], rh, vals[cIdx], {
             size: 16,
-            bold: (cIdx === 2 || cIdx === 4) && mr === "S",
-            color: (cIdx === 2 || cIdx === 4) && mr === "S" ? "#b42318" : "#111827",
-            align: cIdx === 0 || cIdx === 2 || cIdx === 3 || cIdx === 5 ? "center" : "left"
+            bold: cIdx === 3 && mr >= 4,
+            color: cIdx === 3 && mr >= 4 ? "#b42318" : "#111827",
+            align: cIdx === 0 || cIdx === 2 || cIdx === 4 ? "center" : "left"
           });
           cx += cols[cIdx];
         }
@@ -1785,16 +1859,13 @@
     drawCell(ctx, M + W * 0.5, y, W * 0.5, 38, "Estate: " + proj.estate + "  |  Handover: " + (proj.handoverDate || "-"), { size: 17 });
     y += 46;
 
-    // Checklist table (1.1 - 4.3) with Rank: G - Good  F - Fair  S - Severe  NA - Not Applicable
-    ctx.fillStyle = "#334155";
-    ctx.font = "15px Arial, sans-serif";
-    ctx.fillText("Rank: G - Good   F - Fair   S - Severe   NA - Not Applicable  |  For (S) Severe, elaborate in 5.2 Remarks & draw SSE's attention.", M, y);
-    y += 24;
-
-    var codeW = 70, rankW = 110, descW = W - codeW - rankW;
+    // Checklist table (1.1 - 4.3)
+    var codeW = 70, rateW = 58, descW = W - codeW - rateW * 6;
     drawCell(ctx, M, y, codeW, 34, "Item", { size: 16, bold: true, fill: "#e2e8f0", align: "center" });
     drawCell(ctx, M + codeW, y, descW, 34, "Inspection Item Description", { size: 16, bold: true, fill: "#e2e8f0" });
-    drawCell(ctx, M + codeW + descW, y, rankW, 34, "Rank", { size: 16, bold: true, fill: "#e2e8f0", align: "center" });
+    for (var ri = 0; ri < RATINGS.length; ri++) {
+      drawCell(ctx, M + codeW + descW + ri * rateW, y, rateW, 34, RATINGS[ri], { size: 15, bold: true, fill: "#e2e8f0", align: "center" });
+    }
     y += 34;
 
     var ratings = el.ratings || {};
@@ -1802,36 +1873,37 @@
       drawCell(ctx, M, y, W, 30, sec.sectionEn, { size: 16, bold: true, fill: "#f1f5f9", pad: 6 });
       y += 30;
       sec.items.forEach(function (it) {
-        var rh = 36;
+        var rh = 38;
         var desc = it.en + (it.hasCustomText && el.othersText ? " : " + el.othersText : "");
-        var chosen = ratings[it.code] || "-";
         drawCell(ctx, M, y, codeW, rh, it.code, { size: 15, bold: true, align: "center", pad: 8 });
         drawCell(ctx, M + codeW, y, descW, rh, desc, { size: 15, pad: 8 });
-        drawCell(ctx, M + codeW + descW, y, rankW, rh, chosen, {
-          size: 16, bold: chosen !== "-", align: "center", pad: 8,
-          color: chosen === "S" ? "#b42318" : (chosen === "F" ? "#b45309" : (chosen === "G" ? "#157a4b" : "#475569")),
-          fill: chosen === "S" ? "#fef2f2" : (chosen === "F" ? "#fffbeb" : null)
-        });
+        var chosen = ratings[it.code] || "";
+        for (var j = 0; j < RATINGS.length; j++) {
+          var rx = M + codeW + descW + j * rateW;
+          var isSel = chosen === RATINGS[j];
+          drawCell(ctx, rx, y, rateW, rh, RATINGS[j], {
+            size: 15, bold: isSel, align: "center", pad: 8,
+            color: isSel ? "#b42318" : "#64748b",
+            fill: isSel ? "#fef2f2" : null
+          });
+          if (isSel) {
+            ctx.strokeStyle = "#b42318";
+            ctx.lineWidth = 2.4;
+            ctx.beginPath();
+            ctx.ellipse(rx + rateW / 2, y + rh / 2, 20, 14, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+        }
         y += rh;
       });
     });
 
-    // Actions: 5.1 Repair Recommended + 5.2 Remarks
-    drawCell(ctx, M, y, W, 30, "Actions", { size: 16, bold: true, fill: "#f1f5f9", pad: 6 });
-    y += 30;
-    drawCell(ctx, M, y, codeW, 36, "5.1", { size: 15, bold: true, align: "center", pad: 8 });
-    drawCell(ctx, M + codeW, y, descW, 36, "Repair is recommended. (Yes / No)", { size: 15, pad: 8 });
-    drawCell(ctx, M + codeW + descW, y, rankW, 36, el.repairRecommended || "-", {
-      size: 16, bold: true, align: "center", pad: 8,
-      color: el.repairRecommended === "Yes" ? "#b42318" : "#157a4b"
-    });
-    y += 36;
-
-    var remText = "5.2 Remarks: " + (el.remarks || "-") +
+    // 5.1 Remarks
+    var remText = "5.1 Remarks: " + (el.remarks || "-") +
       (el.condition ? "\nCondition: " + el.condition : "") +
       (el.externalWorks ? "\nExternal Works: " + el.externalWorks : "");
-    drawCell(ctx, M, y, W, 108, remText, { size: 16, pad: 10, fill: "#fcfcfd" });
-    y += 120;
+    drawCell(ctx, M, y, W, 115, remText, { size: 16, pad: 10, fill: "#fcfcfd" });
+    y += 130;
 
     // Element Photos (up to 2 photos on bottom of same page, overflow to next page 4 per page)
     var photos = photosOfElement(el.id);
@@ -1911,9 +1983,9 @@
 
 
   function buildExportRows(targetProjs) {
-    var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Worst Rank (G/F/S/NA)", "SSE Attention (S)"];
+    var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Max Rating", "SSE Attention"];
     ALL_ITEMS.forEach(function (it) { header.push(it.code + " " + it.en); });
-    header.push("4.3 Others", "5.1 Repair Recommended", "5.2 Remarks", "Condition", "External Works", "Element GPS", "Photo Count");
+    header.push("4.3 Others", "5.1 Remarks", "Condition", "External Works", "Element GPS", "Photo Count");
     var recRows = [header];
     var photoRows = [["Estate", "Structural Element", "Location", "Photo File", "Taken At (HKT)", "Caption", "Lat", "Lng", "GPS Source"]];
     targetProjs.forEach(function (proj) {
@@ -1923,10 +1995,10 @@
         var row = [
           proj.id, proj.rmo || "", proj.dmo || "", proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : ""),
           proj.inspectionDate, proj.handoverDate || "", proj.seName || "", proj.sseName || "",
-          String(idx + 1), el.name, el.location || "", elemStatusOf(el), mr || "", mr === "S" ? "YES" : "NO"
+          String(idx + 1), el.name, el.location || "", elemStatusOf(el), mr || "", mr >= 4 ? "YES" : "NO"
         ];
         ALL_ITEMS.forEach(function (it) { row.push((el.ratings && el.ratings[it.code]) || ""); });
-        row.push(el.othersText || "", el.repairRecommended || "", el.remarks || "", el.condition || "", el.externalWorks || "", hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
+        row.push(el.othersText || "", el.remarks || "", el.condition || "", el.externalWorks || "", hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
         recRows.push(row);
         phs.forEach(function (p, pi) {
           var fn = "photos/" + slug(proj.estate) + "/" + String(idx + 1).padStart(2, "0") + "_" + slug(el.name) + "_" + String(pi + 1).padStart(2, "0") + ".jpg";
@@ -1946,9 +2018,8 @@
       var summaryRows = els.map(function (el, i) {
         var mr = maxRatingOf(el.ratings);
         return '<tr><td>' + (i + 1) + '</td><td><strong>' + xmlEsc(el.name) + '</strong>' + (el.location ? '<br><small>' + xmlEsc(el.location) + '</small>' : '') + '</td>' +
-          '<td style="text-align:center;font-weight:700;">' + (mr || "-") + '</td>' +
-          '<td style="text-align:center;">' + xmlEsc(el.repairRecommended || "-") + '</td>' +
-          '<td style="text-align:center;">' + (mr === "S" ? '<strong style="color:#b42318;">SSE Attention (S)</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
+          '<td style="text-align:center;">' + (mr || "-") + '</td>' +
+          '<td style="text-align:center;">' + (mr >= 4 ? '<strong style="color:#b42318;">SSE Attention</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
           '<td style="text-align:center;">' + photosOfElement(el.id).length + '</td>' +
           '<td>' + xmlEsc(el.remarks || "-") + '</td></tr>';
       }).join("");
@@ -1959,11 +2030,11 @@
         '<table class="report-meta">' +
         '<tr><td><strong>RMO / DMO:</strong> ' + xmlEsc((proj.rmo ? proj.rmo + " · " : "") + (proj.dmo || "-")) + '</td><td><strong>Estate:</strong> ' + xmlEsc(proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "")) + '</td></tr>' +
         '<tr><td><strong>Inspection Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td><td><strong>Handover Date:</strong> ' + xmlEsc(proj.handoverDate || "-") + '</td></tr>' +
-        '<tr><td><strong>Total Elements Inspected:</strong> ' + els.length + '</td><td><strong>SSE Attention (Rank S):</strong> <strong style="color:' + (sseCount ? '#b42318' : '#157a4b') + ';">' + sseCount + '</strong></td></tr>' +
+        '<tr><td><strong>Total Elements Inspected:</strong> ' + els.length + '</td><td><strong>SSE Attention (Rating 4–5):</strong> <strong style="color:' + (sseCount ? '#b42318' : '#157a4b') + ';">' + sseCount + '</strong></td></tr>' +
         '</table>' +
         (proj.notes ? '<p style="font-size:0.84rem;margin:6px 0;"><strong>Project Notes:</strong> ' + xmlEsc(proj.notes) + '</p>' : '') +
         '<h4 style="margin:10px 0 6px;font-size:0.9rem;">Summary of Inspected Structural Elements</h4>' +
-        '<table class="report-table"><tr><th>#</th><th>Structural Element & Location</th><th>Rank</th><th>Repair</th><th>Status</th><th>Photos</th><th>5.2 Remarks</th></tr>' +
+        '<table class="report-table"><tr><th>#</th><th>Structural Element & Location</th><th>Max Rating</th><th>Status</th><th>Photos</th><th>5.1 Remarks</th></tr>' +
         summaryRows + '</table>' +
         '<table class="report-meta" style="margin-top:16px;">' +
         '<tr><td style="width:50%;"><strong>Reported by SE:</strong><br><br>Signature: _______________________<br><br>Name: ' + xmlEsc(proj.seName || "_______________________") + '<br>Date: ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td>' +
@@ -2069,9 +2140,9 @@
     $("exportStatus").textContent = t("exporting");
     try {
       var zip = new JSZip();
-      var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Worst Rank (G/F/S/NA)", "SSE Attention (S)"];
+      var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Max Rating", "SSE Attention"];
       ALL_ITEMS.forEach(function (it) { header.push(it.code + " " + it.en); });
-      header.push("4.3 Others", "5.1 Repair Recommended", "5.2 Remarks", "Condition", "External Works", "Element GPS", "Photo Count");
+      header.push("4.3 Others", "5.1 Remarks", "Condition", "External Works", "Element GPS", "Photo Count");
 
       var recRows = [header];
       var photoRows = [["Estate", "Structural Element", "Location", "Photo File", "Taken At (HKT)", "Caption", "Lat", "Lng", "GPS Source"]];
@@ -2083,10 +2154,10 @@
           var mr = maxRatingOf(el.ratings);
           var row = [
             proj.id, proj.rmo || "", proj.dmo || "", proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : ""), proj.inspectionDate, proj.handoverDate || "", proj.seName || "", proj.sseName || "",
-            String(idx + 1), el.name, el.location || "", elemStatusOf(el), mr || "", mr === "S" ? "YES" : "NO"
+            String(idx + 1), el.name, el.location || "", elemStatusOf(el), mr || "", mr >= 4 ? "YES" : "NO"
           ];
           ALL_ITEMS.forEach(function (it) { row.push((el.ratings && el.ratings[it.code]) || ""); });
-          row.push(el.othersText || "", el.repairRecommended || "", el.remarks || "", el.condition || "", el.externalWorks || "", hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
+          row.push(el.othersText || "", el.remarks || "", el.condition || "", el.externalWorks || "", hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
           recRows.push(row);
 
           phs.forEach(function (p, pi) {
@@ -2256,32 +2327,53 @@
       await reloadData(); toast(t("deleted")); showTab("projectDetail");
     });
     $("btnElemReport").addEventListener("click", function () { openSingleElementReport(state.currentElementId); });
-    $("btnFillGood").addEventListener("click", function () {
-      ALL_ITEMS.forEach(function (it) {
-        if (it.hasCustomText && !(state.currentOthersText || "").trim()) {
-          state.currentRatings[it.code] = "NA";
+    $("btnFillNa").addEventListener("click", function () {
+      ALL_ITEMS.forEach(function (it) { if (!state.currentRatings[it.code]) state.currentRatings[it.code] = "N.A."; });
+      updateChecklistSelection();
+    });
+    $("btnClearRatings").addEventListener("click", function () { state.currentRatings = {}; clearOverallQuickHighlight(); updateChecklistSelection(); });
+    if ($("fieldWorksSelect")) {
+      $("fieldWorksSelect").addEventListener("change", function () {
+        var val = $("fieldWorksSelect").value;
+        if (!val) return;
+        var cur = ($("fieldWorks").value || "").trim();
+        $("fieldWorks").value = cur ? (cur.indexOf(val) === -1 ? cur + ", " + val : cur) : val;
+        $("fieldWorksSelect").value = "";
+      });
+    }
+    if ($("fieldElemSelect")) {
+      $("fieldElemSelect").addEventListener("change", function () {
+        var val = $("fieldElemSelect").value;
+        var inp = $("fieldElemName");
+        if (val === "__CUSTOM__") {
+          inp.value = "";
+          inp.hidden = false;
+          inp.required = true;
+          inp.focus();
         } else {
-          state.currentRatings[it.code] = "G";
+          inp.value = val;
+          inp.hidden = true;
+          inp.required = false;
+          if (val) applySmartNaPreset(val);
         }
       });
-      state.currentRepairRec = "No";
-      $("fieldElemStatus").value = "normal";
-      updateRepairButtons();
-      updateChecklistSelection();
-      toast(t("filledGoodToast"));
-    });
-    $("btnFillNa").addEventListener("click", function () {
-      ALL_ITEMS.forEach(function (it) { if (!state.currentRatings[it.code]) state.currentRatings[it.code] = "NA"; });
-      updateChecklistSelection();
-    });
-    document.querySelectorAll("#repairYnGroup .yn-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        var v = btn.getAttribute("data-yn");
-        state.currentRepairRec = state.currentRepairRec === v ? "" : v;
-        updateRepairButtons();
+    }
+    if ($("overallGradeBar")) {
+      $("overallGradeBar").addEventListener("click", function (e) {
+        var btn = e.target.closest(".grade-quick-btn");
+        if (!btn) return;
+        var grade = btn.getAttribute("data-grade");
+        var skipNa = $("chkSkipNa") ? $("chkSkipNa").checked : true;
+        clearOverallQuickHighlight();
+        btn.classList.add("is-active");
+        ALL_ITEMS.forEach(function (it) {
+          if (grade !== "N.A." && skipNa && state.currentRatings[it.code] === "N.A.") return;
+          state.currentRatings[it.code] = grade;
+        });
+        updateChecklistSelection();
+        toast(t("overallAppliedToast") + grade);
       });
-    });
-    $("btnClearRatings").addEventListener("click", function () { state.currentRatings = {}; updateChecklistSelection(); });
+    }
     $("btnRefreshGps").addEventListener("click", async function () {
       $("elemGpsText").textContent = t("gpsLoading");
       var gps = await getDeviceGps();
