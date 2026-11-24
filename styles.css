@@ -190,9 +190,10 @@ main { flex: 1; padding: 16px 20px calc(28px + var(--safe-b)); }
   font-weight: 600; font-size: 0.85rem; cursor: pointer;
 }
 .rate-btn.is-selected { background: var(--teal); color: #fff; border-color: var(--teal); }
-.rate-btn.is-selected[data-val="4"] { background: var(--warn); border-color: var(--warn); color: #fff; }
-.rate-btn.is-selected[data-val="5"] { background: var(--danger); border-color: var(--danger); color: #fff; }
-.rate-btn.is-selected[data-val="N.A."] { background: #64748b; border-color: #64748b; color: #fff; }
+.rate-btn.is-selected[data-val="G"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+.rate-btn.is-selected[data-val="F"] { background: var(--warn); border-color: var(--warn); color: #fff; }
+.rate-btn.is-selected[data-val="S"] { background: var(--danger); border-color: var(--danger); color: #fff; }
+.rate-btn.is-selected[data-val="NA"] { background: #64748b; border-color: #64748b; color: #fff; }
 
 .sse-alert {
   background: var(--danger-bg); border: 1px solid #fecaca; color: #991b1b;
@@ -404,7 +405,7 @@ body.layout-phone .panel { padding: 12px 13px; margin-bottom: 12px; }
 body.layout-phone .form-grid { grid-template-columns: 1fr; gap: 10px; }
 body.layout-phone .cl-row { grid-template-columns: 36px 1fr; gap: 6px; padding: 10px 2px; }
 body.layout-phone .rating-group {
-  grid-column: 1 / -1; display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; margin-top: 4px;
+  grid-column: 1 / -1; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 4px;
 }
 body.layout-phone .rate-btn { min-width: 0; width: 100%; height: 40px; font-size: 0.84rem; padding: 0; }
 
@@ -486,7 +487,7 @@ body.layout-phone.is-forced-phone .tabs {
 }
 .overall-grade-btns {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 .grade-quick-btn {
@@ -508,6 +509,11 @@ body.layout-phone.is-forced-phone .tabs {
   color: #fff;
   border-color: var(--teal);
 }
+.grade-quick-btn.is-good.is-active {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
 .grade-quick-btn.is-warn.is-active {
   background: var(--warn);
   border-color: var(--warn);
@@ -525,6 +531,6 @@ body.layout-phone.is-forced-phone .tabs {
 }
 @media (max-width: 520px) {
   .overall-grade-btns {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 }
