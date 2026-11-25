@@ -857,7 +857,7 @@
   function applyLang() {
     var p = I18N[state.lang];
     document.documentElement.lang = p.htmlLang;
-    document.title = p.title + " v3.6";
+    document.title = p.title + " v3.6.1";
     $("appTitle").textContent = p.title;
     $("appTagline").textContent = p.tagline;
     $("btnLang").textContent = p.langBtn;
@@ -2208,19 +2208,13 @@
     y += 14;
     var sigH = 140;
     drawCell(ctx, M, y, W / 2, sigH,
-      "Inspection Officer
-Name: " + (fb.inspName || proj.seName || "__________________") + "   Post: " + (fb.inspPost || "________") +
-      "
-
-Signature: __________________   Date: " + fmtDateDisplay(proj.inspectionDate),
+      "Inspection Officer\nName: " + (fb.inspName || proj.seName || "__________________") + "   Post: " + (fb.inspPost || "________") +
+      "\n\nSignature: __________________   Date: " + fmtDateDisplay(proj.inspectionDate),
       { size: 16, pad: 10, fill: "#fcfcfd" }
     );
     drawCell(ctx, M + W / 2, y, W / 2, sigH,
-      "Checking Officer
-Name: " + (fb.chkName || proj.sseName || "__________________") + "   Post: " + (fb.chkPost || "________") +
-      "
-
-Signature: __________________   Date: ____________",
+      "Checking Officer\nName: " + (fb.chkName || proj.sseName || "__________________") + "   Post: " + (fb.chkPost || "________") +
+      "\n\nSignature: __________________   Date: ____________",
       { size: 16, pad: 10, fill: "#fcfcfd" }
     );
     y += sigH + 10;
