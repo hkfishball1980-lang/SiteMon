@@ -56,6 +56,17 @@
   var ALL_ITEMS = [];
   CHECKLIST_SCHEMA.forEach(function (sec) { sec.items.forEach(function (it) { ALL_ITEMS.push(it); }); });
   var RATINGS = ["G", "F", "S", "NA"];
+  var FORM_B_GRADES = ["A", "B", "C", "NA"];
+  var FORM_B_DEFAULT_ITEMS = [
+    { code: "1.1", en: "Covered Walkway", zh: "有蓋行人通道 (Covered Walkway)" },
+    { code: "1.2", en: "Fence Wall", zh: "圍牆 (Fence Wall)" },
+    { code: "1.3", en: "Lamp Post", zh: "燈柱 (Lamp Post)" },
+    { code: "1.4", en: "Lift Tower", zh: "升降機塔 (Lift Tower)" },
+    { code: "1.5", en: "Pergola / Pavilion", zh: "涼亭／花架 (Pergola / Pavilion)" },
+    { code: "1.6", en: "Pump House", zh: "泵房 (Pump House)" },
+    { code: "1.7", en: "R.C.P.", zh: "垃圾收集站 (R.C.P.)" },
+    { code: "1.8", en: "Others", zh: "其他 (Others)", isOther: true }
+  ];
 
   var STEEL_CODES = ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6"];
   var SMART_NA_PRESETS = {
@@ -110,7 +121,23 @@
       backProjects: "← 返回專案列表",
       backProject: "← 返回構建物列表",
       editProject: "編輯專案資料",
-      addElement: "+ 新增 Structural Element",
+      addElement: "+ 新增 Form A (Appendix X)",
+      addFormB: "+ 新增 Form B (Annual)",
+      formTypeA: "Form A · Appendix X 結構巡查",
+      formTypeB: "Form B · Annual 外部構建物",
+      secFormBTitle: "Form B — Annual Inspection (External Structures)",
+      formBFloors: "巡查樓層 (Floors Inspection)",
+      formBHint: "* 評級：A = 良好 (Good)；B = 可接受，需日常小修；C = 需計劃性維修／2–3 個月內詳細勘察；NA = 不適用。",
+      formBOverall: "一鍵整體評級 (A / B / C / NA)",
+      formBAddRow: "+ 新增其他外部構建物項目",
+      formBDefectPh: "缺陷性質（含滲水／入水）及所需修繕工程…",
+      formBRemPh: "備註（如清除危險、相片編號、位置）…",
+      formBOtherPh: "輸入其他構建物名稱…",
+      formBCAlert: "⚠️ 偵測到 Condition C：需要計劃性維修工程或於未來 2–3 個月內進行詳細勘察。",
+      formBInspName: "巡查人員姓名 (Inspection Officer)",
+      formBInspPost: "巡查人員職位 (Post)",
+      formBChkName: "覆核人員姓名 (Checking Officer)",
+      formBChkPost: "覆核人員職位 (Post)",
       projectReport: "生成整份屋邨巡查報告 (PDF)",
       projectZip: "匯出此專案 ZIP",
       deleteProject: "刪除專案",
@@ -255,7 +282,23 @@
       backProjects: "← All Projects",
       backProject: "← Back to Elements",
       editProject: "Edit Project",
-      addElement: "+ Add Structural Element",
+      addElement: "+ Add Form A (Appendix X)",
+      addFormB: "+ Add Form B (Annual)",
+      formTypeA: "Form A · Appendix X",
+      formTypeB: "Form B · Annual Inspection",
+      secFormBTitle: "Form B — Annual Inspection (External Structures)",
+      formBFloors: "Floors Inspection",
+      formBHint: "* Condition: A-Good; B-Acceptable (minor day-to-day repairs); C-Planned Maintenance / Detailed survey in 2–3 months; NA-Not Applicable.",
+      formBOverall: "Overall Quick Appraisal (A / B / C / NA)",
+      formBAddRow: "+ Add Extra External Structure Row",
+      formBDefectPh: "Nature of Defect (Water Seepage/Ingress) & Remedial Works…",
+      formBRemPh: "Remarks (Hazard Removal, Photo Ref. No., Location)…",
+      formBOtherPh: "Specify other structure…",
+      formBCAlert: "⚠️ Condition C detected: Planned Maintenance works / Detailed survey required in coming 2–3 months.",
+      formBInspName: "Inspection Officer Name",
+      formBInspPost: "Inspection Officer Post",
+      formBChkName: "Checking Officer Name",
+      formBChkPost: "Checking Officer Post",
       projectReport: "Full Estate Inspection Report (PDF)",
       projectZip: "Export Project ZIP",
       deleteProject: "Delete Project",
@@ -401,6 +444,8 @@
     isNewElementUnsaved: false,
     currentRatings: {},
     currentOthersText: "",
+    currentFormType: "A",
+    currentFormBRows: [],
     currentGps: null,
     map: null,
     tileLayer: null,
@@ -474,7 +519,31 @@
     return max === 3 ? "S" : max === 2 ? "F" : max === 1 ? "G" : "";
   }
   function hasSevereRating(ratings) { return maxRatingOf(ratings) === "S"; }
-  function elemStatusOf(el) { return el.status || (hasSevereRating(el.ratings) ? "sse" : "normal"); }
+  function defaultFormBRows() {
+    return FORM_B_DEFAULT_ITEMS.map(function (it) {
+      return { code: it.code, label: it.en, customLabel: "", defect: "", condition: "", remarks: "", isOther: !!it.isOther };
+    });
+  }
+  function formBMaxCondition(rows) {
+    var max = 0;
+    (rows || []).forEach(function (r) {
+      var v = r && r.condition;
+      var s = v === "C" ? 3 : v === "B" ? 2 : v === "A" ? 1 : 0;
+      if (s > max) max = s;
+    });
+    return max === 3 ? "C" : max === 2 ? "B" : max === 1 ? "A" : "";
+  }
+  function elemIsSevere(el) {
+    if (!el) return false;
+    if (el.formType === "B") return formBMaxCondition(el.formB && el.formB.rows) === "C";
+    return hasSevereRating(el.ratings);
+  }
+  function elemMaxBadgeText(el) {
+    if (!el) return "";
+    if (el.formType === "B") return formBMaxCondition(el.formB && el.formB.rows);
+    return maxRatingOf(el.ratings);
+  }
+  function elemStatusOf(el) { return el.status || (elemIsSevere(el) ? "sse" : "normal"); }
 
   function showConfirm(msg) {
     return new Promise(function (resolve) {
@@ -788,7 +857,7 @@
   function applyLang() {
     var p = I18N[state.lang];
     document.documentElement.lang = p.htmlLang;
-    document.title = p.title + " v3.5.2";
+    document.title = p.title + " v3.6";
     $("appTitle").textContent = p.title;
     $("appTagline").textContent = p.tagline;
     $("btnLang").textContent = p.langBtn;
@@ -804,6 +873,21 @@
     $("btnBackToProject").textContent = p.backProject;
     $("btnEditProject").textContent = p.editProject;
     $("btnAddElement").textContent = p.addElement;
+    if ($("btnAddFormB")) $("btnAddFormB").textContent = p.addFormB;
+    if ($("btnFormTypeA")) $("btnFormTypeA").textContent = p.formTypeA;
+    if ($("btnFormTypeB")) $("btnFormTypeB").textContent = p.formTypeB;
+    if ($("secFormBTitle")) $("secFormBTitle").textContent = p.secFormBTitle;
+    if ($("lblFormBFloors")) $("lblFormBFloors").textContent = p.formBFloors;
+    if ($("formBHint")) $("formBHint").textContent = p.formBHint;
+    if ($("lblFormBOverall")) $("lblFormBOverall").textContent = p.formBOverall;
+    if ($("lblFormBSkipNa")) $("lblFormBSkipNa").textContent = p.skipNaLabel;
+    if ($("btnFormBFillNa")) $("btnFormBFillNa").textContent = p.fillNa;
+    if ($("btnFormBClear")) $("btnFormBClear").textContent = p.clearRatings;
+    if ($("btnFormBAddRow")) $("btnFormBAddRow").textContent = p.formBAddRow;
+    if ($("lblFormBInspName")) $("lblFormBInspName").textContent = p.formBInspName;
+    if ($("lblFormBInspPost")) $("lblFormBInspPost").textContent = p.formBInspPost;
+    if ($("lblFormBChkName")) $("lblFormBChkName").textContent = p.formBChkName;
+    if ($("lblFormBChkPost")) $("lblFormBChkPost").textContent = p.formBChkPost;
     $("btnProjectReport").textContent = p.projectReport;
     $("btnProjectZip").textContent = p.projectZip;
     $("btnDeleteProject").textContent = p.deleteProject;
@@ -889,6 +973,7 @@
     updateConnBadge();
     applyAdaptiveLayout();
     renderChecklistUi();
+    renderFormBUi();
     updateElemGpsText();
   }
 
@@ -956,7 +1041,7 @@
     rows.forEach(function (proj) {
       var els = elementsOf(proj.id);
       var phCount = photosOfProject(proj.id).length;
-      var sseCount = els.filter(function (e) { return elemStatusOf(e) === "sse" || hasSevereRating(e.ratings); }).length;
+      var sseCount = els.filter(function (e) { return elemStatusOf(e) === "sse" || elemIsSevere(e); }).length;
 
       var card = document.createElement("article");
       card.className = "card card-project";
@@ -1112,11 +1197,19 @@
       sb.textContent = st === "sse" ? t("fltSse") : st === "followup" ? t("fltFollowup") : t("fltNormal");
       badges.appendChild(sb);
 
-      var mr = maxRatingOf(el.ratings);
+      var ft = el.formType === "B" ? "B" : "A";
+      var fb = document.createElement("span");
+      fb.className = "badge " + (ft === "B" ? "badge-form-b" : "badge-form-a");
+      fb.textContent = "Form " + ft;
+      badges.appendChild(fb);
+
+      var mr = elemMaxBadgeText(el);
       if (mr) {
         var rb = document.createElement("span");
-        rb.className = "badge " + (mr === "S" ? "badge-danger" : mr === "F" ? "badge-warn" : "badge-ok");
-        rb.textContent = t("maxRate") + ": " + mr;
+        var isBad = (mr === "S" || mr === "C");
+        var isMid = (mr === "F" || mr === "B");
+        rb.className = "badge " + (isBad ? "badge-danger" : isMid ? "badge-warn" : "badge-ok");
+        rb.textContent = (ft === "B" ? "Cond: " : t("maxRate") + ": ") + mr;
         badges.appendChild(rb);
       }
       var hasGps = hasCoords(el.gps) || photos.some(function (p) { return hasCoords(p); });
@@ -1257,6 +1350,132 @@
     toast(t("smartNaToast"));
   }
 
+  function setActiveFormType(ft, isUserClick) {
+    state.currentFormType = ft === "B" ? "B" : "A";
+    var isB = state.currentFormType === "B";
+    if ($("btnFormTypeA")) $("btnFormTypeA").classList.toggle("is-active", !isB);
+    if ($("btnFormTypeB")) $("btnFormTypeB").classList.toggle("is-active", isB);
+    if ($("formAPanel")) $("formAPanel").hidden = isB;
+    if ($("remarksPanel")) $("remarksPanel").hidden = isB;
+    if ($("formBPanel")) $("formBPanel").hidden = !isB;
+    if (isB && isUserClick && !$("fieldElemName").value.trim()) {
+      $("fieldElemName").value = "Annual Inspection (External Structures)";
+      syncElemSelectFromInput();
+    }
+    if (isB) renderFormBUi();
+  }
+
+  function updateFormBFloorChips() {
+    var val = ($("fieldFormBFloors") ? $("fieldFormBFloors").value : "").toLowerCase();
+    document.querySelectorAll("#formBFloorChips .chip").forEach(function (c) {
+      var fl = c.getAttribute("data-floor").toLowerCase();
+      c.classList.toggle("is-active", val.indexOf(fl) !== -1);
+    });
+  }
+
+  function clearFormBQuickHighlight() {
+    var bar = $("formBOverallBar");
+    if (!bar) return;
+    bar.querySelectorAll(".grade-quick-btn").forEach(function (b) { b.classList.remove("is-active"); });
+  }
+
+  function updateFormBCBanner() {
+    var hasC = formBMaxCondition(state.currentFormBRows) === "C";
+    if ($("formBCAlertBanner")) {
+      $("formBCAlertBanner").hidden = !hasC;
+      $("formBCAlertBanner").textContent = t("formBCAlert");
+    }
+    if (hasC && $("fieldElemStatus") && $("fieldElemStatus").value === "normal") {
+      $("fieldElemStatus").value = "sse";
+    }
+  }
+
+  function renderFormBUi() {
+    var wrap = $("formBContainer");
+    if (!wrap) return;
+    wrap.innerHTML = "";
+    if (!state.currentFormBRows || !state.currentFormBRows.length) {
+      state.currentFormBRows = defaultFormBRows();
+    }
+    state.currentFormBRows.forEach(function (row, idx) {
+      var card = document.createElement("div");
+      card.className = "fb-card";
+
+      var head = document.createElement("div");
+      head.className = "fb-card-head";
+
+      var title = document.createElement("div");
+      title.className = "fb-item-title";
+      var codeSpan = document.createElement("span");
+      codeSpan.className = "fb-code";
+      codeSpan.textContent = row.code;
+      title.appendChild(codeSpan);
+
+      var defItem = FORM_B_DEFAULT_ITEMS.filter(function (d) { return d.code === row.code; })[0];
+      if (row.isOther || !defItem) {
+        var lblInp = document.createElement("input");
+        lblInp.type = "text";
+        lblInp.placeholder = t("formBOtherPh");
+        lblInp.value = row.customLabel || (defItem ? "" : row.label || "");
+        lblInp.style.cssText = "min-height:34px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;width:210px;max-width:55vw;font-weight:600;";
+        lblInp.addEventListener("input", function () { row.customLabel = lblInp.value; });
+        var lblPrefix = document.createElement("span");
+        lblPrefix.textContent = defItem ? (state.lang === "zh" ? "其他：" : "Others:") : "";
+        if (defItem) title.appendChild(lblPrefix);
+        title.appendChild(lblInp);
+      } else {
+        var nameSpan = document.createElement("span");
+        nameSpan.textContent = state.lang === "zh" ? defItem.zh : defItem.en;
+        title.appendChild(nameSpan);
+      }
+
+      var grp = document.createElement("div");
+      grp.className = "rating-group";
+      FORM_B_GRADES.forEach(function (g) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "rate-btn fb-rate-btn" + (row.condition === g ? " is-selected" : "");
+        b.setAttribute("data-idx", String(idx));
+        b.setAttribute("data-val", g);
+        b.textContent = g;
+        b.addEventListener("click", function () {
+          row.condition = (row.condition === g) ? "" : g;
+          clearFormBQuickHighlight();
+          grp.querySelectorAll(".fb-rate-btn").forEach(function (btn) {
+            btn.classList.toggle("is-selected", row.condition === btn.getAttribute("data-val"));
+          });
+          updateFormBCBanner();
+        });
+        grp.appendChild(b);
+      });
+
+      head.appendChild(title);
+      head.appendChild(grp);
+      card.appendChild(head);
+
+      var inputs = document.createElement("div");
+      inputs.className = "fb-inputs";
+
+      var defInp = document.createElement("input");
+      defInp.type = "text";
+      defInp.placeholder = t("formBDefectPh");
+      defInp.value = row.defect || "";
+      defInp.addEventListener("input", function () { row.defect = defInp.value; });
+
+      var remInp = document.createElement("input");
+      remInp.type = "text";
+      remInp.placeholder = t("formBRemPh");
+      remInp.value = row.remarks || "";
+      remInp.addEventListener("input", function () { row.remarks = remInp.value; });
+
+      inputs.appendChild(defInp);
+      inputs.appendChild(remInp);
+      card.appendChild(inputs);
+      wrap.appendChild(card);
+    });
+    updateFormBCBanner();
+  }
+
   function fillElementForm(el) {
     var proj = getProject(el.projectId);
     $("crumbElemContext").textContent = (proj ? proj.estate + " › " : "") + (el.name || t("addElement"));
@@ -1276,18 +1495,44 @@
     state.currentGps = el.gps ? Object.assign({}, el.gps) : null;
     $("btnDeleteElem").hidden = !!el.isDraft;
     $("btnElemReport").hidden = !!el.isDraft;
+    var fb = el.formB || {};
+    state.currentFormBRows = (Array.isArray(fb.rows) && fb.rows.length)
+      ? fb.rows.map(function (r) { return Object.assign({}, r); })
+      : defaultFormBRows();
+    if ($("fieldFormBFloors")) $("fieldFormBFloors").value = fb.floors || "G/F, Podium";
+    if ($("fieldFormBInspName")) $("fieldFormBInspName").value = fb.inspName || (proj ? proj.seName || "" : "");
+    if ($("fieldFormBInspPost")) $("fieldFormBInspPost").value = fb.inspPost || "";
+    if ($("fieldFormBChkName")) $("fieldFormBChkName").value = fb.chkName || (proj ? proj.sseName || "" : "");
+    if ($("fieldFormBChkPost")) $("fieldFormBChkPost").value = fb.chkPost || "";
+    updateFormBFloorChips();
+    clearFormBQuickHighlight();
+    setActiveFormType(el.formType === "B" ? "B" : "A", false);
     renderChecklistUi();
+    renderFormBUi();
     updateElemGpsText();
     renderPhotoGrid(el.id);
   }
 
-  async function startNewElement() {
+  async function startNewElement(formType) {
     if (!state.currentProjectId) return;
+    var ft = formType === "B" ? "B" : "A";
+    var proj = getProject(state.currentProjectId);
     var el = {
       id: uid(), projectId: state.currentProjectId,
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-      name: "", location: "", status: "normal", ratings: {}, othersText: "",
-      remarks: "", condition: "", externalWorks: "", gps: null, isDraft: true
+      formType: ft,
+      name: ft === "B" ? "Annual Inspection (External Structures)" : "",
+      location: "", status: "normal", ratings: {}, othersText: "",
+      remarks: "", condition: "", externalWorks: "",
+      formB: {
+        floors: "G/F, Podium",
+        rows: defaultFormBRows(),
+        inspName: proj ? (proj.seName || "") : "",
+        inspPost: "",
+        chkName: proj ? (proj.sseName || "") : "",
+        chkPost: ""
+      },
+      gps: null, isDraft: true
     };
     state.currentElementId = el.id;
     state.isNewElementUnsaved = true;
@@ -1320,13 +1565,23 @@
     if (!el) return;
     var name = $("fieldElemName").value.trim();
     if (!name) { toast(t("needElemName")); if ($("fieldElemName").hidden && $("fieldElemSelect")) $("fieldElemSelect").focus(); else $("fieldElemName").focus(); return; }
+    var ft = state.currentFormType === "B" ? "B" : "A";
     var remarks = $("fieldRemarks").value.trim();
-    if (hasSevereRating(state.currentRatings) && !remarks) {
+    if (ft === "A" && hasSevereRating(state.currentRatings) && !remarks) {
       if (!(await showConfirm(t("sseRemarksConfirm")))) { $("fieldRemarks").focus(); return; }
     }
+    var formBData = {
+      floors: $("fieldFormBFloors") ? $("fieldFormBFloors").value.trim() : "",
+      rows: state.currentFormBRows.map(function (r) { return Object.assign({}, r); }),
+      inspName: $("fieldFormBInspName") ? $("fieldFormBInspName").value.trim() : "",
+      inspPost: $("fieldFormBInspPost") ? $("fieldFormBInspPost").value.trim() : "",
+      chkName: $("fieldFormBChkName") ? $("fieldFormBChkName").value.trim() : "",
+      chkPost: $("fieldFormBChkPost") ? $("fieldFormBChkPost").value.trim() : ""
+    };
     var updated = {
       id: el.id, projectId: el.projectId,
       createdAt: el.createdAt, updatedAt: new Date().toISOString(),
+      formType: ft,
       name: name, location: $("fieldElemLoc").value.trim(),
       status: $("fieldElemStatus").value,
       ratings: Object.assign({}, state.currentRatings),
@@ -1334,6 +1589,7 @@
       remarks: remarks,
       condition: $("fieldCondition").value.trim(),
       externalWorks: $("fieldWorks").value.trim(),
+      formB: formBData,
       gps: state.currentGps ? Object.assign({}, state.currentGps) : null,
       isDraft: false
     };
@@ -1514,7 +1770,55 @@
   }
 
   /* ---------- Report Builder (Full Estate Report & Single Element Appendix X) ---------- */
+  function buildFormBReportPageHtml(proj, el, idxLabel) {
+    var fb = el.formB || {};
+    var rows = (Array.isArray(fb.rows) && fb.rows.length) ? fb.rows : defaultFormBRows();
+    var photos = photosOfElement(el.id);
+    var rowsHtml = '<tr><td></td><td colspan="6"><strong>External Structures</strong></td></tr>';
+    rows.forEach(function (r) {
+      var elemTitle = r.isOther ? ("Others: " + (r.customLabel || "")) : (r.customLabel || r.label || "");
+      var cA = r.condition === "A" ? '<span class="circled">✓</span>' : "";
+      var cB = r.condition === "B" ? '<span class="circled">✓</span>' : "";
+      var cC = r.condition === "C" ? '<span class="circled">✓</span>' : "";
+      var remTxt = (r.remarks || "") + (r.condition === "NA" ? (r.remarks ? " (NA)" : "NA") : "");
+      rowsHtml += '<tr>' +
+        '<td style="text-align:center;">' + xmlEsc(r.code) + '</td>' +
+        '<td>' + xmlEsc(elemTitle) + '</td>' +
+        '<td>' + xmlEsc(r.defect || "") + '</td>' +
+        '<td style="text-align:center;">' + cA + '</td>' +
+        '<td style="text-align:center;">' + cB + '</td>' +
+        '<td style="text-align:center;">' + cC + '</td>' +
+        '<td>' + xmlEsc(remTxt) + '</td></tr>';
+    });
+    var photosHtml = photos.length ? '<div class="report-photos">' + photos.map(function (p, i) {
+      return '<figure><img src="' + urlFor(p.thumb || p.blob) + '"><figcaption><strong>' + xmlEsc(idxLabel) + ' Photo ' + (i + 1) + '</strong>' +
+        (p.caption ? ': ' + xmlEsc(p.caption) : '') + ' (' + xmlEsc(fmtCoord(p.lat, p.lng)) + ')</figcaption></figure>';
+    }).join("") + '</div>' : '';
+
+    return '<div class="report-page">' +
+      '<div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span>' + xmlEsc(idxLabel) + '</span><span>Form B</span></div>' +
+      '<h3>Annual Inspection (External Structures)</h3>' +
+      '<table class="report-meta">' +
+      '<tr><td><strong>Estate:</strong> ' + xmlEsc((proj.estate || "-") + (proj.estateZh ? " (" + proj.estateZh + ")" : "")) + '</td>' +
+      '<td><strong>Floors Inspection:</strong> ' + xmlEsc(fb.floors || "G/F, Podium") + '</td>' +
+      '<td><strong>Date:</strong> ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td></tr>' +
+      '</table>' +
+      '<table class="report-table">' +
+      '<tr><th rowspan="2" style="width:42px;text-align:center;">Item</th><th rowspan="2">Elements</th><th rowspan="2">Nature of Defect Including Water Seepage/ Ingress and Remedial Works Required</th><th colspan="3" style="text-align:center;">Condition Appraisal *</th><th rowspan="2">Remarks:<br><small>(e.g. Hazard Removal, Photo Ref. No., Location)</small></th></tr>' +
+      '<tr><th style="width:32px;text-align:center;">A</th><th style="width:32px;text-align:center;">B</th><th style="width:32px;text-align:center;">C</th></tr>' +
+      rowsHtml + '</table>' +
+      '<table class="report-meta" style="margin-top:10px;">' +
+      '<tr><td style="width:50%;"><strong>Inspection Officer</strong><br>Name: ' + xmlEsc(fb.inspName || proj.seName || "________________") +
+      ' &nbsp; Post: ' + xmlEsc(fb.inspPost || "________") + '<br><br>Signature: ________________ &nbsp; Date: ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td>' +
+      '<td style="width:50%;"><strong>Checking Officer</strong><br>Name: ' + xmlEsc(fb.chkName || proj.sseName || "________________") +
+      ' &nbsp; Post: ' + xmlEsc(fb.chkPost || "________") + '<br><br>Signature: ________________ &nbsp; Date: ____________</td></tr>' +
+      '</table>' +
+      '<p style="font-size:0.74rem;margin-top:6px;">* Condition: A-Good; B-Acceptable, but requires minor day to day repairs; C-Planned Maintenance works required/ Detailed survey required in coming two to three months to ascertain extent of works.</p>' +
+      photosHtml + '</div>';
+  }
+
   function buildElementReportPageHtml(proj, el, idxLabel, includeSignoff) {
+    if (el.formType === "B") return buildFormBReportPageHtml(proj, el, idxLabel);
     var photos = photosOfElement(el.id);
     var ratings = el.ratings || {};
     var rowsHtml = "";
@@ -1561,14 +1865,15 @@
     if (!proj) return;
     var els = elementsOf(proj.id);
     if (!els.length) { toast(t("emptyElements")); return; }
-    var sseCount = els.filter(function (e) { return hasSevereRating(e.ratings) || elemStatusOf(e) === "sse"; }).length;
+    var sseCount = els.filter(function (e) { return elemIsSevere(e) || elemStatusOf(e) === "sse"; }).length;
 
     var summaryRows = els.map(function (el, i) {
-      var mr = maxRatingOf(el.ratings);
+      var mr = elemMaxBadgeText(el);
       var ph = photosOfElement(el.id).length;
-      return '<tr><td>' + (i + 1) + '</td><td><strong>' + xmlEsc(el.name) + '</strong>' + (el.location ? '<br><small>' + xmlEsc(el.location) + '</small>' : '') + '</td>' +
+      var fTag = el.formType === "B" ? "[Form B] " : "[Form A] ";
+      return '<tr><td>' + (i + 1) + '</td><td><strong>' + fTag + xmlEsc(el.name) + '</strong>' + (el.location ? '<br><small>' + xmlEsc(el.location) + '</small>' : '') + '</td>' +
         '<td style="text-align:center;">' + (mr || "-") + '</td>' +
-        '<td style="text-align:center;">' + (mr === "S" ? '<strong style="color:#b42318;">SSE Attention</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
+        '<td style="text-align:center;">' + ((mr === "S" || mr === "C") ? '<strong style="color:#b42318;">SSE Attention</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
         '<td style="text-align:center;">' + ph + '</td>' +
         '<td>' + xmlEsc(el.remarks || "-") + '</td></tr>';
     }).join("");
@@ -1739,7 +2044,7 @@
   async function renderSummaryPageCanvas(proj, els) {
     var pg = newA4Canvas(), ctx = pg.ctx;
     var M = 60, W = 1120, y = 55;
-    var sseCount = els.filter(function (e) { return hasSevereRating(e.ratings) || elemStatusOf(e) === "sse"; }).length;
+    var sseCount = els.filter(function (e) { return elemIsSevere(e) || elemStatusOf(e) === "sse"; }).length;
 
     ctx.fillStyle = "#475569";
     ctx.font = "18px Arial, sans-serif";
@@ -1800,14 +2105,15 @@
           break;
         }
         var el = els[r];
-        var mr = maxRatingOf(el.ratings);
+        var mr = elemMaxBadgeText(el);
         var phCnt = photosOfElement(el.id).length;
-        var stLabel = mr === "S" ? "SSE Attention" : elemStatusOf(el);
+        var isSev = (mr === "S" || mr === "C");
+        var stLabel = isSev ? "SSE Attention" : elemStatusOf(el);
         var rh = 58;
         cx = M;
         var vals = [
           String(r + 1),
-          el.name + (el.location ? "\n" + el.location : ""),
+          (el.formType === "B" ? "[Form B] " : "[Form A] ") + el.name + (el.location ? "\n" + el.location : ""),
           mr ? String(mr) : "-",
           stLabel,
           String(phCnt),
@@ -1816,8 +2122,8 @@
         for (var cIdx = 0; cIdx < cols.length; cIdx++) {
           drawCell(ctx, cx, y, cols[cIdx], rh, vals[cIdx], {
             size: 16,
-            bold: cIdx === 3 && mr === "S",
-            color: cIdx === 3 && mr === "S" ? "#b42318" : "#111827",
+            bold: cIdx === 3 && isSev,
+            color: cIdx === 3 && isSev ? "#b42318" : "#111827",
             align: cIdx === 0 || cIdx === 2 || cIdx === 4 ? "center" : "left"
           });
           cx += cols[cIdx];
@@ -1841,7 +2147,109 @@
     return { w: pg.c.width, h: pg.c.height, bytes: dataUrlToUint8(pg.c.toDataURL("image/jpeg", 0.88)) };
   }
 
+  async function renderFormBPagesCanvas(proj, el, idxNum) {
+    var pages = [];
+    var pg = newA4Canvas(), ctx = pg.ctx;
+    var M = 55, W = 1130, y = 50;
+    var fb = el.formB || {};
+    var rows = (Array.isArray(fb.rows) && fb.rows.length) ? fb.rows : defaultFormBRows();
+
+    ctx.fillStyle = "#475569";
+    ctx.font = "18px Arial, sans-serif";
+    ctx.fillText("Record #" + idxNum + " — " + proj.estate, M, y);
+    ctx.fillText("Form B", M + W - 70, y);
+    y += 30;
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 26px Arial, sans-serif";
+    var t1 = "ANNUAL INSPECTION (EXTERNAL STRUCTURES)";
+    ctx.fillText(t1, M + (W - ctx.measureText(t1).width) / 2, y);
+    y += 40;
+
+    drawCell(ctx, M, y, W * 0.45, 40, "Estate: " + proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : ""), { size: 17, bold: true });
+    drawCell(ctx, M + W * 0.45, y, W * 0.35, 40, "Floors: " + (fb.floors || "G/F, Podium"), { size: 17 });
+    drawCell(ctx, M + W * 0.80, y, W * 0.20, 40, "Date: " + fmtDateDisplay(proj.inspectionDate), { size: 16 });
+    y += 48;
+
+    var cItem = 62, cElem = 210, cDef = 350, cCond = 46, cRem = W - cItem - cElem - cDef - cCond * 3;
+    drawCell(ctx, M, y, cItem, 58, "Item", { size: 15, bold: true, fill: "#e2e8f0", align: "center" });
+    drawCell(ctx, M + cItem, y, cElem, 58, "Elements", { size: 15, bold: true, fill: "#e2e8f0" });
+    drawCell(ctx, M + cItem + cElem, y, cDef, 58, "Nature of Defect (Water Seepage/Ingress) & Remedial Works", { size: 14, bold: true, fill: "#e2e8f0" });
+    drawCell(ctx, M + cItem + cElem + cDef, y, cCond * 3, 28, "Condition *", { size: 14, bold: true, fill: "#e2e8f0", align: "center", pad: 5 });
+    ["A", "B", "C"].forEach(function (g, gi) {
+      drawCell(ctx, M + cItem + cElem + cDef + gi * cCond, y + 28, cCond, 30, g, { size: 15, bold: true, fill: "#e2e8f0", align: "center", pad: 5 });
+    });
+    drawCell(ctx, M + cItem + cElem + cDef + cCond * 3, y, cRem, 58, "Remarks (Hazard Removal, Photo Ref, Location)", { size: 14, bold: true, fill: "#e2e8f0" });
+    y += 58;
+
+    drawCell(ctx, M, y, W, 30, "External Structures", { size: 15, bold: true, fill: "#f1f5f9", pad: 6 });
+    y += 30;
+
+    rows.forEach(function (r) {
+      if (y > 1420) return;
+      var rh = 62;
+      var elemTitle = r.isOther ? ("Others: " + (r.customLabel || "")) : (r.customLabel || r.label || "");
+      var remTxt = (r.remarks || "") + (r.condition === "NA" ? (r.remarks ? " (NA)" : "NA") : "");
+      drawCell(ctx, M, y, cItem, rh, r.code, { size: 15, bold: true, align: "center", pad: 8 });
+      drawCell(ctx, M + cItem, y, cElem, rh, elemTitle, { size: 15, pad: 8 });
+      drawCell(ctx, M + cItem + cElem, y, cDef, rh, r.defect || "", { size: 14, pad: 7 });
+      ["A", "B", "C"].forEach(function (g, gi) {
+        var sel = r.condition === g;
+        drawCell(ctx, M + cItem + cElem + cDef + gi * cCond, y, cCond, rh, sel ? "✓" : "", {
+          size: 20, bold: true, align: "center", pad: 14,
+          color: g === "C" ? "#b42318" : g === "B" ? "#b45309" : "#157a4b",
+          fill: sel ? (g === "C" ? "#fef2f2" : g === "B" ? "#fffbeb" : "#ecfdf5") : null
+        });
+      });
+      drawCell(ctx, M + cItem + cElem + cDef + cCond * 3, y, cRem, rh, remTxt, { size: 14, pad: 7 });
+      y += rh;
+    });
+
+    y += 14;
+    var sigH = 140;
+    drawCell(ctx, M, y, W / 2, sigH,
+      "Inspection Officer
+Name: " + (fb.inspName || proj.seName || "__________________") + "   Post: " + (fb.inspPost || "________") +
+      "
+
+Signature: __________________   Date: " + fmtDateDisplay(proj.inspectionDate),
+      { size: 16, pad: 10, fill: "#fcfcfd" }
+    );
+    drawCell(ctx, M + W / 2, y, W / 2, sigH,
+      "Checking Officer
+Name: " + (fb.chkName || proj.sseName || "__________________") + "   Post: " + (fb.chkPost || "________") +
+      "
+
+Signature: __________________   Date: ____________",
+      { size: 16, pad: 10, fill: "#fcfcfd" }
+    );
+    y += sigH + 10;
+    ctx.fillStyle = "#475569";
+    ctx.font = "14px Arial, sans-serif";
+    ctx.fillText("* Condition: A-Good; B-Acceptable (minor day-to-day repairs); C-Planned Maintenance / Detailed survey required in 2-3 months.", M, y);
+
+    pages.push({ w: pg.c.width, h: pg.c.height, bytes: dataUrlToUint8(pg.c.toDataURL("image/jpeg", 0.88)) });
+
+    var photos = photosOfElement(el.id);
+    var colW = (W - 24) / 2, pIdx = 0;
+    while (pIdx < photos.length) {
+      var pg2 = newA4Canvas(), ctx2 = pg2.ctx;
+      ctx2.fillStyle = "#0f172a";
+      ctx2.font = "bold 22px 'PingFang HK', Arial, sans-serif";
+      ctx2.fillText("Form B #" + idxNum + " — " + el.name + " (Inspection Photos)", M, 55);
+      var py = 105;
+      for (var row = 0; row < 2 && pIdx < photos.length; row++) {
+        for (var col = 0; col < 2 && pIdx < photos.length; col++, pIdx++) {
+          await drawPhotoBox(ctx2, M + col * (colW + 24), py + row * 420, colW, 340, photos[pIdx], "Form B Photo " + (pIdx + 1));
+        }
+      }
+      pages.push({ w: pg2.c.width, h: pg2.c.height, bytes: dataUrlToUint8(pg2.c.toDataURL("image/jpeg", 0.86)) });
+    }
+    return pages;
+  }
+
   async function renderElementPagesCanvas(proj, el, idxNum) {
+    if (el.formType === "B") return renderFormBPagesCanvas(proj, el, idxNum);
     var pages = [];
     var pg = newA4Canvas(), ctx = pg.ctx;
     var M = 60, W = 1120, y = 52;
@@ -1989,7 +2397,7 @@
 
 
   function buildExportRows(targetProjs) {
-    var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Rank", "SSE Attention"];
+    var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Form Type", "Structural Element", "Location", "Status", "Rank", "SSE Attention"];
     ALL_ITEMS.forEach(function (it) { header.push(it.code + " " + it.en); });
     header.push("4.3 Others", "5.1 Remarks", "Condition", "External Works", "Element GPS", "Photo Count");
     var recRows = [header];
@@ -1997,14 +2405,16 @@
     targetProjs.forEach(function (proj) {
       elementsOf(proj.id).forEach(function (el, idx) {
         var phs = photosOfElement(el.id);
-        var mr = maxRatingOf(el.ratings);
+        var mr = elemMaxBadgeText(el);
+        var ft = el.formType === "B" ? "Form B" : "Form A";
         var row = [
           proj.id, proj.rmo || "", proj.dmo || "", proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : ""),
           proj.inspectionDate, proj.handoverDate || "", proj.seName || "", proj.sseName || "",
-          String(idx + 1), el.name, el.location || "", elemStatusOf(el), mr || "", mr === "S" ? "YES" : "NO"
+          String(idx + 1), ft, el.name, el.location || "", elemStatusOf(el), mr || "", (mr === "S" || mr === "C") ? "YES" : "NO"
         ];
         ALL_ITEMS.forEach(function (it) { row.push((el.ratings && el.ratings[it.code]) || ""); });
-        row.push(el.othersText || "", el.remarks || "", el.condition || "", el.externalWorks || "", hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
+        var fbTxt = el.formType === "B" && el.formB ? ("Floors: " + (el.formB.floors || "-") + " | " + (el.formB.rows || []).filter(function (r) { return r.condition || r.defect || r.remarks; }).map(function (r) { return r.code + " " + (r.customLabel || r.label) + ": [" + (r.condition || "-") + "]" + (r.defect ? " " + r.defect : "") + (r.remarks ? " (" + r.remarks + ")" : ""); }).join("; ")) : (el.externalWorks || "");
+        row.push(el.othersText || "", el.remarks || "", el.condition || "", fbTxt, hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
         recRows.push(row);
         phs.forEach(function (p, pi) {
           var fn = "photos/" + slug(proj.estate) + "/" + String(idx + 1).padStart(2, "0") + "_" + slug(el.name) + "_" + String(pi + 1).padStart(2, "0") + ".jpg";
@@ -2020,12 +2430,13 @@
     targetProjs.forEach(function (proj) {
       var els = elementsOf(proj.id);
       if (!els.length) return;
-      var sseCount = els.filter(function (e) { return hasSevereRating(e.ratings) || elemStatusOf(e) === "sse"; }).length;
+      var sseCount = els.filter(function (e) { return elemIsSevere(e) || elemStatusOf(e) === "sse"; }).length;
       var summaryRows = els.map(function (el, i) {
-        var mr = maxRatingOf(el.ratings);
-        return '<tr><td>' + (i + 1) + '</td><td><strong>' + xmlEsc(el.name) + '</strong>' + (el.location ? '<br><small>' + xmlEsc(el.location) + '</small>' : '') + '</td>' +
+        var mr = elemMaxBadgeText(el);
+        var fTag = el.formType === "B" ? "[Form B] " : "[Form A] ";
+        return '<tr><td>' + (i + 1) + '</td><td><strong>' + fTag + xmlEsc(el.name) + '</strong>' + (el.location ? '<br><small>' + xmlEsc(el.location) + '</small>' : '') + '</td>' +
           '<td style="text-align:center;">' + (mr || "-") + '</td>' +
-          '<td style="text-align:center;">' + (mr === "S" ? '<strong style="color:#b42318;">SSE Attention</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
+          '<td style="text-align:center;">' + ((mr === "S" || mr === "C") ? '<strong style="color:#b42318;">SSE Attention</strong>' : xmlEsc(elemStatusOf(el))) + '</td>' +
           '<td style="text-align:center;">' + photosOfElement(el.id).length + '</td>' +
           '<td>' + xmlEsc(el.remarks || "-") + '</td></tr>';
       }).join("");
@@ -2146,7 +2557,7 @@
     $("exportStatus").textContent = t("exporting");
     try {
       var zip = new JSZip();
-      var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Structural Element", "Location", "Status", "Rank", "SSE Attention"];
+      var header = ["Project ID", "RMO Region", "DMO", "Estate", "Inspection Date", "Handover Date", "SE", "SSE", "Element #", "Form Type", "Structural Element", "Location", "Status", "Rank", "SSE Attention"];
       ALL_ITEMS.forEach(function (it) { header.push(it.code + " " + it.en); });
       header.push("4.3 Others", "5.1 Remarks", "Condition", "External Works", "Element GPS", "Photo Count");
 
@@ -2157,13 +2568,15 @@
         var els = elementsOf(proj.id);
         els.forEach(function (el, idx) {
           var phs = photosOfElement(el.id);
-          var mr = maxRatingOf(el.ratings);
+          var mr = elemMaxBadgeText(el);
+          var ft = el.formType === "B" ? "Form B" : "Form A";
           var row = [
             proj.id, proj.rmo || "", proj.dmo || "", proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : ""), proj.inspectionDate, proj.handoverDate || "", proj.seName || "", proj.sseName || "",
-            String(idx + 1), el.name, el.location || "", elemStatusOf(el), mr || "", mr === "S" ? "YES" : "NO"
+            String(idx + 1), ft, el.name, el.location || "", elemStatusOf(el), mr || "", (mr === "S" || mr === "C") ? "YES" : "NO"
           ];
           ALL_ITEMS.forEach(function (it) { row.push((el.ratings && el.ratings[it.code]) || ""); });
-          row.push(el.othersText || "", el.remarks || "", el.condition || "", el.externalWorks || "", hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
+          var fbTxt = el.formType === "B" && el.formB ? ("Floors: " + (el.formB.floors || "-") + " | " + (el.formB.rows || []).filter(function (r) { return r.condition || r.defect || r.remarks; }).map(function (r) { return r.code + " " + (r.customLabel || r.label) + ": [" + (r.condition || "-") + "]" + (r.defect ? " " + r.defect : "") + (r.remarks ? " (" + r.remarks + ")" : ""); }).join("; ")) : (el.externalWorks || "");
+        row.push(el.othersText || "", el.remarks || "", el.condition || "", fbTxt, hasCoords(el.gps) ? fmtCoord(el.gps.lat, el.gps.lng) : "", String(phs.length));
           recRows.push(row);
 
           phs.forEach(function (p, pi) {
@@ -2301,7 +2714,59 @@
     $("projectForm").addEventListener("submit", function (e) { e.preventDefault(); saveProjectForm(); });
     $("btnBackToProjects").addEventListener("click", function () { showTab("projects"); });
     $("btnBackToProject").addEventListener("click", function () { showTab("projectDetail"); });
-    $("btnAddElement").addEventListener("click", startNewElement);
+    $("btnAddElement").addEventListener("click", function () { startNewElement("A"); });
+    if ($("btnAddFormB")) $("btnAddFormB").addEventListener("click", function () { startNewElement("B"); });
+    if ($("btnFormTypeA")) $("btnFormTypeA").addEventListener("click", function () { setActiveFormType("A", true); });
+    if ($("btnFormTypeB")) $("btnFormTypeB").addEventListener("click", function () { setActiveFormType("B", true); });
+    if ($("formBFloorChips")) {
+      $("formBFloorChips").addEventListener("click", function (e) {
+        var chip = e.target.closest(".chip");
+        if (!chip || !$("fieldFormBFloors")) return;
+        var fl = chip.getAttribute("data-floor");
+        var parts = $("fieldFormBFloors").value.split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+        var idx = parts.findIndex(function (p) { return p.toLowerCase() === fl.toLowerCase(); });
+        if (idx >= 0) parts.splice(idx, 1); else parts.push(fl);
+        $("fieldFormBFloors").value = parts.join(", ");
+        updateFormBFloorChips();
+      });
+    }
+    if ($("fieldFormBFloors")) $("fieldFormBFloors").addEventListener("input", updateFormBFloorChips);
+    if ($("btnFormBFillNa")) {
+      $("btnFormBFillNa").addEventListener("click", function () {
+        state.currentFormBRows.forEach(function (r) { if (!r.condition) r.condition = "NA"; });
+        renderFormBUi();
+      });
+    }
+    if ($("btnFormBClear")) {
+      $("btnFormBClear").addEventListener("click", function () {
+        state.currentFormBRows.forEach(function (r) { r.condition = ""; });
+        clearFormBQuickHighlight();
+        renderFormBUi();
+      });
+    }
+    if ($("formBOverallBar")) {
+      $("formBOverallBar").addEventListener("click", function (e) {
+        var btn = e.target.closest(".grade-quick-btn");
+        if (!btn) return;
+        var grade = btn.getAttribute("data-grade");
+        var skipNa = $("chkFormBSkipNa") ? $("chkFormBSkipNa").checked : true;
+        clearFormBQuickHighlight();
+        btn.classList.add("is-active");
+        state.currentFormBRows.forEach(function (r) {
+          if (grade !== "NA" && skipNa && r.condition === "NA") return;
+          r.condition = grade;
+        });
+        renderFormBUi();
+        toast(t("overallAppliedToast") + grade);
+      });
+    }
+    if ($("btnFormBAddRow")) {
+      $("btnFormBAddRow").addEventListener("click", function () {
+        var nextNum = state.currentFormBRows.length + 1;
+        state.currentFormBRows.push({ code: "1." + nextNum, label: "", customLabel: "", defect: "", condition: "", remarks: "", isOther: true });
+        renderFormBUi();
+      });
+    }
     $("btnProjectReport").addEventListener("click", function () { openProjectReport(state.currentProjectId); });
     $("btnProjectZip").addEventListener("click", function () { runZipExport(state.currentProjectId); });
     $("btnDeleteProject").addEventListener("click", async function () {

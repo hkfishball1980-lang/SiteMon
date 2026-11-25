@@ -534,3 +534,106 @@ body.layout-phone.is-forced-phone .tabs {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* v3.6 Form A / Form B Switcher & Form B Annual Inspection UI */
+.form-type-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 6px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+}
+.form-type-btn {
+  min-height: var(--tap, 44px);
+  border: 1.5px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 6px 10px;
+  transition: all 0.15s ease;
+}
+.form-type-btn.is-active {
+  background: var(--navy);
+  color: #fff;
+  border-color: var(--navy);
+}
+.badge-form-a { background: #e0f2fe; color: #0369a1; }
+.badge-form-b { background: #ede9fe; color: #6d28d9; }
+
+.floor-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.fb-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #fafcfd;
+}
+.fb-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.fb-item-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--navy);
+  font-size: 0.94rem;
+}
+.fb-code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: #e6eff2;
+  color: var(--navy);
+  font-size: 0.82rem;
+}
+.fb-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+.fb-inputs input {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.86rem;
+}
+.fb-inputs input:focus {
+  outline: 2px solid rgba(15, 118, 110, 0.25);
+  border-color: var(--teal);
+}
+.fb-rate-btn.is-selected[data-val="A"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+.fb-rate-btn.is-selected[data-val="B"] { background: var(--warn); border-color: var(--warn); color: #fff; }
+.fb-rate-btn.is-selected[data-val="C"] { background: var(--danger); border-color: var(--danger); color: #fff; }
+.fb-rate-btn.is-selected[data-val="NA"] { background: #64748b; border-color: #64748b; color: #fff; }
+
+@media (max-width: 720px) {
+  .fb-inputs { grid-template-columns: 1fr; }
+}
+body.layout-phone .fb-inputs { grid-template-columns: 1fr; }
+body.layout-phone .form-type-btn { font-size: 0.82rem; padding: 6px; }

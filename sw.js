@@ -1,5 +1,5 @@
 /* Site Inspection v3.0 Service Worker (Network-First for core files) */
-const CACHE_NAME = 'site-inspection-v3.5.2-20261124';
+const CACHE_NAME = 'site-inspection-v3.6-20261125';
 const CORE_FILES = ['./', './index.html', './styles.css', './estates-data.js', './app.js', './manifest.webmanifest'];
 const ASSET_PATHS = [
   ...CORE_FILES,
