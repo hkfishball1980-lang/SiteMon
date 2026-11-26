@@ -138,6 +138,33 @@
       formBInspPost: "巡查人員職位 (Post)",
       formBChkName: "覆核人員姓名 (Checking Officer)",
       formBChkPost: "覆核人員職位 (Post)",
+      projPlanTitle: "屋邨平面圖底圖 (Block / Floor Plan)",
+      projPlanNone: "未上載平面圖底圖（支援 PNG / JPG 或 PDF）",
+      projPlanLoaded: "已載入底圖：",
+      uploadPlanBtn: "上載底圖 (PNG/JPG/PDF)",
+      changePlanBtn: "更換底圖",
+      openPlanBtn: "開啟底圖落點巡查",
+      removePlanBtn: "移除底圖",
+      confirmRemovePlan: "確定移除此屋邨的平面圖底圖？（已紀錄的構建物及評級不會被刪除）",
+      planUploading: "正在處理平面圖（PDF 會自動轉高清圖）…",
+      planSaved: "已儲存屋邨平面圖底圖",
+      planPdfOffline: "首次轉換 PDF 需要連線載入轉檔引擎，或請先將 PDF 轉成 PNG/JPG 圖片後離線上載。",
+      planUploadFail: "無法讀取此檔案，請使用 PNG、JPG 或標準 PDF。",
+      elemPlanPos: "平面圖標記位置：",
+      pickPlanLoc: "喺底圖點選位置",
+      clearPlanLoc: "清除標記",
+      noPlanUploaded: "呢個屋邨尚未上載平面圖底圖，請先於屋邨頁上載底圖。",
+      noPlanPin: "未標記",
+      planPinBadge: "已標底圖",
+      planModalInspectTitle: "屋邨平面圖 — 點擊底圖落 Pin 開新紀錄",
+      planModalInspectHint: "雙指縮放／拖曳底圖。點擊底圖任意位置放置藍色標記，再按下方「新增 Form A」或「新增 Form B」；亦可點擊現有編號查看或編輯。",
+      planModalPickTitle: "在平面圖點選此構建物位置",
+      planModalPickHint: "點擊底圖放置或移動藍色標記，再按「套用平面圖位置」。",
+      planCreateA: "+ 喺此位置開 Form A",
+      planCreateB: "+ 喺此位置開 Form B",
+      planApplyPick: "套用平面圖位置",
+      planNeedTap: "請先在平面圖上點擊一個位置。"
+,
       projectReport: "生成整份屋邨巡查報告 (PDF)",
       projectZip: "匯出此專案 ZIP",
       deleteProject: "刪除專案",
@@ -299,6 +326,33 @@
       formBInspPost: "Inspection Officer Post",
       formBChkName: "Checking Officer Name",
       formBChkPost: "Checking Officer Post",
+      projPlanTitle: "Estate Floor / Block Plan Base Map",
+      projPlanNone: "No floor plan uploaded (supports PNG / JPG or PDF)",
+      projPlanLoaded: "Loaded plan: ",
+      uploadPlanBtn: "Upload Plan (PNG/JPG/PDF)",
+      changePlanBtn: "Replace Plan",
+      openPlanBtn: "Open Plan & Pin",
+      removePlanBtn: "Remove Plan",
+      confirmRemovePlan: "Remove this estate floor plan? (Existing inspection records will be kept.)",
+      planUploading: "Processing floor plan (converting PDF to HD image)…",
+      planSaved: "Estate floor plan saved",
+      planPdfOffline: "Converting PDF requires an internet connection once, or upload a PNG/JPG image offline.",
+      planUploadFail: "Could not read file. Please use PNG, JPG, or standard PDF.",
+      elemPlanPos: "Floor Plan Pin:",
+      pickPlanLoc: "Pin on Floor Plan",
+      clearPlanLoc: "Clear Pin",
+      noPlanUploaded: "No floor plan uploaded for this estate yet. Upload one on the Project page first.",
+      noPlanPin: "Not pinned",
+      planPinBadge: "Pinned",
+      planModalInspectTitle: "Estate Floor Plan — Tap to Pin & Create Record",
+      planModalInspectHint: "Pinch to zoom/pan. Tap anywhere to drop a blue pin, then tap + Form A or + Form B. Tap existing numbered pins to edit.",
+      planModalPickTitle: "Pin Element Location on Floor Plan",
+      planModalPickHint: "Tap on the floor plan to place or move the blue pin, then tap Apply.",
+      planCreateA: "+ New Form A Here",
+      planCreateB: "+ New Form B Here",
+      planApplyPick: "Apply Plan Pin",
+      planNeedTap: "Please tap a location on the floor plan first."
+,
       projectReport: "Full Estate Inspection Report (PDF)",
       projectZip: "Export Project ZIP",
       deleteProject: "Delete Project",
@@ -447,6 +501,12 @@
     currentFormType: "A",
     currentFormBRows: [],
     currentGps: null,
+    currentPlanPos: null,
+    planMap: null,
+    planMode: "inspect",
+    planTempPos: null,
+    planTempMarker: null,
+    planObjUrl: null,
     map: null,
     tileLayer: null,
     pickerMap: null,
@@ -857,7 +917,7 @@
   function applyLang() {
     var p = I18N[state.lang];
     document.documentElement.lang = p.htmlLang;
-    document.title = p.title + " v3.6.1";
+    document.title = p.title + " v3.7";
     $("appTitle").textContent = p.title;
     $("appTagline").textContent = p.tagline;
     $("btnLang").textContent = p.langBtn;
@@ -888,6 +948,16 @@
     if ($("lblFormBInspPost")) $("lblFormBInspPost").textContent = p.formBInspPost;
     if ($("lblFormBChkName")) $("lblFormBChkName").textContent = p.formBChkName;
     if ($("lblFormBChkPost")) $("lblFormBChkPost").textContent = p.formBChkPost;
+    if ($("lblProjPlanTitle")) $("lblProjPlanTitle").textContent = p.projPlanTitle;
+    if ($("btnOpenFloorPlan")) $("btnOpenFloorPlan").textContent = p.openPlanBtn;
+    if ($("btnRemoveFloorPlan")) $("btnRemoveFloorPlan").textContent = p.removePlanBtn;
+    if ($("lblElemPlanPos")) $("lblElemPlanPos").textContent = p.elemPlanPos;
+    if ($("btnPickPlanLoc")) $("btnPickPlanLoc").textContent = p.pickPlanLoc;
+    if ($("btnClearPlanLoc")) $("btnClearPlanLoc").textContent = p.clearPlanLoc;
+    if ($("btnPlanCreateA")) $("btnPlanCreateA").textContent = p.planCreateA;
+    if ($("btnPlanCreateB")) $("btnPlanCreateB").textContent = p.planCreateB;
+    if ($("btnPlanApplyPick")) $("btnPlanApplyPick").textContent = p.planApplyPick;
+    if ($("btnPlanCancel")) $("btnPlanCancel").textContent = p.close;
     $("btnProjectReport").textContent = p.projectReport;
     $("btnProjectZip").textContent = p.projectZip;
     $("btnDeleteProject").textContent = p.deleteProject;
@@ -1119,7 +1189,11 @@
       handoverDate: $("fieldProjHandover").value.trim(),
       seName: $("fieldProjSe").value.trim(),
       sseName: $("fieldProjSse").value.trim(),
-      notes: $("fieldProjNotes").value.trim()
+      notes: $("fieldProjNotes").value.trim(),
+      planBlob: existing ? (existing.planBlob || null) : null,
+      planWidth: existing ? (existing.planWidth || 0) : 0,
+      planHeight: existing ? (existing.planHeight || 0) : 0,
+      planName: existing ? (existing.planName || "") : ""
     };
     await putItem("projects", proj);
     await reloadData();
@@ -1140,6 +1214,7 @@
     if (!proj) { showTab("projects"); return; }
 
     var allEls = elementsOf(proj.id);
+    updateProjectPlanBar(proj);
     var phTotal = photosOfProject(proj.id).length;
     $("crumbProjectName").textContent = proj.estate;
     $("heroEstateTitle").textContent = (proj.rmo ? "[" + proj.rmo + "] " : "") + proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "");
@@ -1217,6 +1292,12 @@
       gb.className = "badge " + (hasGps ? "badge-ok" : "badge-neutral");
       gb.textContent = hasGps ? t("hasCoords") : t("noCoords");
       badges.appendChild(gb);
+      if (hasPlanPos(el.planPos)) {
+        var pb = document.createElement("span");
+        pb.className = "badge badge-plan";
+        pb.textContent = t("planPinBadge");
+        badges.appendChild(pb);
+      }
 
       card.appendChild(thumb); card.appendChild(body); card.appendChild(badges);
       card.addEventListener("click", function () { openElement(el.id); });
@@ -1476,6 +1557,359 @@
     updateFormBCBanner();
   }
 
+  /* ---------- Custom Estate Floor Plan (PNG/JPG/PDF + Leaflet CRS.Simple + PDF Report) ---------- */
+  function hasPlanPos(pos) {
+    return !!(pos && typeof pos.x === "number" && typeof pos.y === "number" && isFinite(pos.x) && isFinite(pos.y));
+  }
+
+  function elemPinColorClass(el) {
+    var mr = elemMaxBadgeText(el);
+    if (mr === "S" || mr === "C") return "plan-pin-danger";
+    if (mr === "F" || mr === "B") return "plan-pin-warn";
+    if (mr === "G" || mr === "A") return "plan-pin-good";
+    return "plan-pin-none";
+  }
+
+  function elemPinHexColor(el) {
+    var mr = elemMaxBadgeText(el);
+    if (mr === "S" || mr === "C") return "#b42318";
+    if (mr === "F" || mr === "B") return "#d97706";
+    if (mr === "G" || mr === "A") return "#157a4b";
+    return "#475569";
+  }
+
+  function updateProjectPlanBar(proj) {
+    if (!$("projPlanStatus")) return;
+    var hasPlan = !!(proj && proj.planBlob);
+    var els = proj ? elementsOf(proj.id) : [];
+    var pinnedCnt = els.filter(function (e) { return hasPlanPos(e.planPos); }).length;
+    if (hasPlan) {
+      $("projPlanStatus").textContent = t("projPlanLoaded") + (proj.planName || "Floor Plan") + " (" + pinnedCnt + "/" + els.length + " " + t("planPinBadge") + ")";
+      if ($("btnOpenFloorPlan")) $("btnOpenFloorPlan").hidden = false;
+      if ($("btnRemoveFloorPlan")) $("btnRemoveFloorPlan").hidden = false;
+      if ($("btnUploadFloorPlan")) $("btnUploadFloorPlan").textContent = t("changePlanBtn");
+    } else {
+      $("projPlanStatus").textContent = t("projPlanNone");
+      if ($("btnOpenFloorPlan")) $("btnOpenFloorPlan").hidden = true;
+      if ($("btnRemoveFloorPlan")) $("btnRemoveFloorPlan").hidden = true;
+      if ($("btnUploadFloorPlan")) $("btnUploadFloorPlan").textContent = t("uploadPlanBtn");
+    }
+  }
+
+  function updateElemPlanPosText() {
+    if (!$("elemPlanPosText")) return;
+    if (hasPlanPos(state.currentPlanPos)) {
+      $("elemPlanPosText").textContent = "X: " + Math.round(state.currentPlanPos.x * 100) + "%, Y: " + Math.round(state.currentPlanPos.y * 100) + "%";
+      if ($("btnClearPlanLoc")) $("btnClearPlanLoc").hidden = false;
+    } else {
+      $("elemPlanPosText").textContent = t("noPlanPin");
+      if ($("btnClearPlanLoc")) $("btnClearPlanLoc").hidden = true;
+    }
+  }
+
+  function ensurePdfJsLoaded() {
+    return new Promise(function (resolve, reject) {
+      if (window.pdfjsLib) { resolve(window.pdfjsLib); return; }
+      if (!navigator.onLine) { reject(new Error("offline")); return; }
+      var s = document.createElement("script");
+      s.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+      s.onload = function () {
+        if (window.pdfjsLib) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+          resolve(window.pdfjsLib);
+        } else reject(new Error("pdfjs"));
+      };
+      s.onerror = function () { reject(new Error("pdfjs")); };
+      document.head.appendChild(s);
+    });
+  }
+
+  async function convertPdfFirstPageToBlob(file) {
+    var pdfjs = await ensurePdfJsLoaded();
+    var buf = await fileToArrayBuffer(file);
+    var pdf = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
+    var page = await pdf.getPage(1);
+    var baseVp = page.getViewport({ scale: 1 });
+    var scale = Math.min(3.0, 2800 / Math.max(baseVp.width, baseVp.height));
+    var vp = page.getViewport({ scale: scale });
+    var c = document.createElement("canvas");
+    c.width = Math.round(vp.width);
+    c.height = Math.round(vp.height);
+    var ctx = c.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, c.width, c.height);
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    return await new Promise(function (res, rej) {
+      c.toBlob(function (b) {
+        if (!b) rej(new Error("blob"));
+        else res({ blob: b, width: c.width, height: c.height });
+      }, "image/jpeg", 0.90);
+    });
+  }
+
+  async function handleFloorPlanUpload(file) {
+    var proj = getProject(state.currentProjectId);
+    if (!proj || !file) return;
+    toast(t("planUploading"));
+    try {
+      var isPdf = /\.pdf$/i.test(file.name || "") || file.type === "application/pdf";
+      var out;
+      if (isPdf) {
+        out = await convertPdfFirstPageToBlob(file);
+      } else {
+        var dec = await decodeImage(file);
+        out = await drawToBlob(dec, 3200, 0.90);
+        if (dec.close) dec.close();
+      }
+      proj.planBlob = out.blob;
+      proj.planWidth = out.width;
+      proj.planHeight = out.height;
+      proj.planName = file.name || "FloorPlan";
+      proj.updatedAt = new Date().toISOString();
+      await putItem("projects", proj);
+      await reloadData();
+      updateProjectPlanBar(getProject(proj.id));
+      toast(t("planSaved"));
+    } catch (err) {
+      console.warn("Floor plan upload error", err);
+      toast(err && err.message === "offline" ? t("planPdfOffline") : t("planUploadFail"));
+    }
+  }
+
+  function closeFloorPlanModal() {
+    if (state.planMap) {
+      state.planMap.remove();
+      state.planMap = null;
+    }
+    if (state.planObjUrl) {
+      try { URL.revokeObjectURL(state.planObjUrl); } catch (e) {}
+      state.planObjUrl = null;
+    }
+    state.planTempMarker = null;
+    state.planTempPos = null;
+    $("floorPlanModal").hidden = true;
+  }
+
+  function openFloorPlanModal(mode) {
+    var proj = getProject(state.currentProjectId);
+    if (!proj || !proj.planBlob) {
+      toast(t("noPlanUploaded"));
+      return;
+    }
+    if (typeof L === "undefined") {
+      toast(t("mapHintOffline"));
+      return;
+    }
+    state.planMode = mode === "pick" ? "pick" : "inspect";
+    var isPick = state.planMode === "pick";
+    $("floorPlanModalTitle").textContent = isPick ? t("planModalPickTitle") : (t("planModalInspectTitle") + " — " + proj.estate);
+    $("floorPlanModalHint").textContent = isPick ? t("planModalPickHint") : t("planModalInspectHint");
+    $("btnPlanCreateA").hidden = isPick;
+    $("btnPlanCreateB").hidden = isPick;
+    $("btnPlanApplyPick").hidden = !isPick;
+    $("floorPlanModal").hidden = false;
+
+    state.planTempPos = (isPick && hasPlanPos(state.currentPlanPos)) ? Object.assign({}, state.currentPlanPos) : null;
+
+    setTimeout(function () {
+      if (state.planMap) { state.planMap.remove(); state.planMap = null; }
+      if (state.planObjUrl) { try { URL.revokeObjectURL(state.planObjUrl); } catch (e) {} }
+      state.planObjUrl = URL.createObjectURL(proj.planBlob);
+      var w = proj.planWidth || 1600;
+      var h = proj.planHeight || 1130;
+      var bounds = [[0, 0], [h, w]];
+
+      var map = L.map("floorPlanCanvas", {
+        crs: L.CRS.Simple,
+        minZoom: -3,
+        maxZoom: 3,
+        zoomSnap: 0.25,
+        attributionControl: false
+      });
+      state.planMap = map;
+      L.imageOverlay(state.planObjUrl, bounds).addTo(map);
+      map.fitBounds(bounds);
+
+      function placeTempMarker(pos) {
+        if (!hasPlanPos(pos)) return;
+        var lat = (1 - pos.y) * h;
+        var lng = pos.x * w;
+        var icon = L.divIcon({
+          className: "",
+          html: '<div class="plan-pin-marker plan-pin-temp">+</div>',
+          iconSize: [34, 34],
+          iconAnchor: [17, 17]
+        });
+        if (state.planTempMarker) {
+          state.planTempMarker.setLatLng([lat, lng]);
+        } else {
+          state.planTempMarker = L.marker([lat, lng], { icon: icon, zIndexOffset: 1000 }).addTo(map);
+        }
+      }
+
+      // Render existing pinned elements
+      var els = elementsOf(proj.id);
+      els.forEach(function (el, idx) {
+        if (!hasPlanPos(el.planPos)) return;
+        if (isPick && el.id === state.currentElementId) return;
+        var lat = (1 - el.planPos.y) * h;
+        var lng = el.planPos.x * w;
+        var icon = L.divIcon({
+          className: "",
+          html: '<div class="plan-pin-marker ' + elemPinColorClass(el) + '">' + (idx + 1) + '</div>',
+          iconSize: [30, 30],
+          iconAnchor: [15, 15]
+        });
+        var m = L.marker([lat, lng], { icon: icon }).addTo(map);
+        var ft = el.formType === "B" ? "Form B" : "Form A";
+        var mr = elemMaxBadgeText(el) || "-";
+        var popupHtml = '<strong>#' + (idx + 1) + ' [' + ft + '] ' + xmlEsc(el.name) + '</strong><br>' +
+          (el.location ? xmlEsc(el.location) + '<br>' : '') +
+          'Rank/Cond: <strong>' + xmlEsc(mr) + '</strong>' +
+          (!isPick ? '<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:6px;" data-open-elem="' + xmlEsc(el.id) + '">' + xmlEsc(state.lang === "zh" ? "開啟紀錄" : "Open Record") + '</button>' : '');
+        m.bindPopup(popupHtml);
+      });
+
+      map.on("popupopen", function (ev) {
+        var node = ev.popup.getElement();
+        if (!node) return;
+        var btn = node.querySelector("[data-open-elem]");
+        if (btn) {
+          btn.addEventListener("click", function () {
+            var eid = btn.getAttribute("data-open-elem");
+            closeFloorPlanModal();
+            openElement(eid);
+          });
+        }
+      });
+
+      if (state.planTempPos) placeTempMarker(state.planTempPos);
+
+      map.on("click", function (ev) {
+        var nx = Math.max(0, Math.min(1, ev.latlng.lng / w));
+        var ny = Math.max(0, Math.min(1, 1 - ev.latlng.lat / h));
+        state.planTempPos = { x: nx, y: ny };
+        placeTempMarker(state.planTempPos);
+      });
+
+      map.invalidateSize();
+    }, 60);
+  }
+
+  function buildFloorPlanReportPageHtml(proj, els) {
+    if (!proj || !proj.planBlob) return "";
+    var pinned = [];
+    els.forEach(function (el, idx) {
+      if (hasPlanPos(el.planPos)) pinned.push({ num: idx + 1, el: el });
+    });
+    var pinsHtml = pinned.map(function (item) {
+      return '<div class="report-plan-pin" style="left:' + (item.el.planPos.x * 100).toFixed(2) + '%;top:' + (item.el.planPos.y * 100).toFixed(2) + '%;background:' + elemPinHexColor(item.el) + ';">' + item.num + '</div>';
+    }).join("");
+    var legendHtml = pinned.length
+      ? '<table class="report-table" style="margin-top:10px;"><tr><th style="width:40px;text-align:center;">#</th><th>Form</th><th>Element &amp; Location</th><th style="text-align:center;">Rank / Cond</th></tr>' +
+        pinned.map(function (item) {
+          var ft = item.el.formType === "B" ? "Form B" : "Form A";
+          return '<tr><td style="text-align:center;"><strong>' + item.num + '</strong></td><td>' + ft + '</td><td>' + xmlEsc(item.el.name + (item.el.location ? " (" + item.el.location + ")" : "")) + '</td><td style="text-align:center;"><strong>' + xmlEsc(elemMaxBadgeText(item.el) || "-") + '</strong></td></tr>';
+        }).join("") + '</table>'
+      : '<p style="font-size:0.8rem;color:#555;margin-top:8px;">No elements pinned on this floor plan yet.</p>';
+
+    return '<div class="report-page">' +
+      '<div style="display:flex;justify-content:space-between;font-size:0.78rem;"><span>Estate Floor Plan — Inspection Locations</span><span>' + xmlEsc(proj.planName || "Floor Plan") + '</span></div>' +
+      '<h3>' + xmlEsc(proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "")) + ' — SITE LOCATION PLAN</h3>' +
+      '<div class="report-plan-wrap"><img src="' + urlFor(proj.planBlob) + '" alt="Floor Plan">' + pinsHtml + '</div>' +
+      '<p style="font-size:0.75rem;margin-top:6px;">Pin Colour: <strong style="color:#157a4b;">Green = G / A</strong> &nbsp;|&nbsp; <strong style="color:#d97706;">Amber = F / B</strong> &nbsp;|&nbsp; <strong style="color:#b42318;">Red = S / C</strong></p>' +
+      legendHtml + '</div>';
+  }
+
+  async function renderAnnotatedFloorPlanCanvas(proj, els) {
+    var pg = newA4Canvas(), ctx = pg.ctx;
+    var M = 55, W = 1130, y = 50;
+
+    ctx.fillStyle = "#475569";
+    ctx.font = "18px Arial, sans-serif";
+    ctx.fillText("Estate Floor Plan — Inspection Locations", M, y);
+    ctx.fillText(proj.planName || "Floor Plan", M + W - 260, y);
+    y += 30;
+
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 25px 'PingFang HK', Arial, sans-serif";
+    var title = proj.estate + (proj.estateZh ? " (" + proj.estateZh + ")" : "") + " — SITE LOCATION PLAN";
+    ctx.fillText(title, M + Math.max(0, (W - ctx.measureText(title).width) / 2), y);
+    y += 40;
+
+    // Fit floor plan image inside box (W x 1020)
+    var boxH = 1020;
+    ctx.strokeStyle = "#334155";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(M, y, W, boxH);
+
+    var drawX = M, drawY = y, drawW = W, drawH = boxH;
+    try {
+      var img = await decodeImage(proj.planBlob);
+      var iw = img.width || img.naturalWidth;
+      var ih = img.height || img.naturalHeight;
+      var ratio = Math.min((W - 12) / iw, (boxH - 12) / ih);
+      drawW = iw * ratio;
+      drawH = ih * ratio;
+      drawX = M + (W - drawW) / 2;
+      drawY = y + (boxH - drawH) / 2;
+      ctx.drawImage(img, drawX, drawY, drawW, drawH);
+      if (img.close) img.close();
+    } catch (e) {}
+
+    // Draw numbered pins on top of the floor plan
+    var pinned = [];
+    els.forEach(function (el, idx) {
+      if (!hasPlanPos(el.planPos)) return;
+      pinned.push({ num: idx + 1, el: el });
+      var px = drawX + el.planPos.x * drawW;
+      var py = drawY + el.planPos.y * drawH;
+      var col = elemPinHexColor(el);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(px, py, 17, 0, Math.PI * 2);
+      ctx.fillStyle = col;
+      ctx.fill();
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 16px Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(String(idx + 1), px, py + 1);
+      ctx.restore();
+    });
+
+    y += boxH + 16;
+    ctx.fillStyle = "#334155";
+    ctx.font = "bold 16px Arial, sans-serif";
+    ctx.fillText("Pin Legend:  Green = G / A (Good)   |   Amber = F / B (Fair / Acceptable)   |   Red = S / C (Severe / Planned Maint.)", M, y);
+    y += 28;
+
+    // Draw Legend Table (up to 12 pinned items neatly in 2 columns)
+    if (pinned.length) {
+      var colW = (W - 20) / 2;
+      var maxRows = Math.min(pinned.length, 20);
+      for (var k = 0; k < maxRows; k++) {
+        var it = pinned[k];
+        var colIdx = k < 10 ? 0 : 1;
+        var rowIdx = k % 10;
+        var lx = M + colIdx * (colW + 20);
+        var ly = y + rowIdx * 42;
+        if (ly + 38 > 1710) break;
+        var ft = it.el.formType === "B" ? "Form B" : "Form A";
+        var mr = elemMaxBadgeText(it.el) || "-";
+        drawCell(ctx, lx, ly, colW, 38,
+          "#" + it.num + " [" + ft + "] " + it.el.name + (it.el.location ? " (" + it.el.location + ")" : "") + "  —  " + mr,
+          { size: 15, pad: 8, color: elemPinHexColor(it.el), bold: (mr === "S" || mr === "C") }
+        );
+      }
+    }
+
+    return { w: pg.c.width, h: pg.c.height, bytes: dataUrlToUint8(pg.c.toDataURL("image/jpeg", 0.88)) };
+  }
+
   function fillElementForm(el) {
     var proj = getProject(el.projectId);
     $("crumbElemContext").textContent = (proj ? proj.estate + " › " : "") + (el.name || t("addElement"));
@@ -1493,6 +1927,7 @@
     state.currentRatings = Object.assign({}, el.ratings || {});
     state.currentOthersText = el.othersText || "";
     state.currentGps = el.gps ? Object.assign({}, el.gps) : null;
+    state.currentPlanPos = hasPlanPos(el.planPos) ? Object.assign({}, el.planPos) : null;
     $("btnDeleteElem").hidden = !!el.isDraft;
     $("btnElemReport").hidden = !!el.isDraft;
     var fb = el.formB || {};
@@ -1510,10 +1945,11 @@
     renderChecklistUi();
     renderFormBUi();
     updateElemGpsText();
+    updateElemPlanPosText();
     renderPhotoGrid(el.id);
   }
 
-  async function startNewElement(formType) {
+  async function startNewElement(formType, initialPlanPos) {
     if (!state.currentProjectId) return;
     var ft = formType === "B" ? "B" : "A";
     var proj = getProject(state.currentProjectId);
@@ -1532,7 +1968,7 @@
         chkName: proj ? (proj.sseName || "") : "",
         chkPost: ""
       },
-      gps: null, isDraft: true
+      gps: null, planPos: hasPlanPos(initialPlanPos) ? Object.assign({}, initialPlanPos) : null, isDraft: true
     };
     state.currentElementId = el.id;
     state.isNewElementUnsaved = true;
@@ -1591,6 +2027,7 @@
       externalWorks: $("fieldWorks").value.trim(),
       formB: formBData,
       gps: state.currentGps ? Object.assign({}, state.currentGps) : null,
+      planPos: hasPlanPos(state.currentPlanPos) ? Object.assign({}, state.currentPlanPos) : null,
       isDraft: false
     };
     await putItem("elements", updated);
@@ -1898,7 +2335,8 @@
 
     var detailPages = els.map(function (el, i) { return buildElementReportPageHtml(proj, el, "Element #" + (i + 1), false); }).join("");
     state.lastReportProjs = [proj];
-    $("reportSheet").innerHTML = coverHtml + detailPages;
+    var planPageHtml = buildFloorPlanReportPageHtml(proj, els);
+    $("reportSheet").innerHTML = coverHtml + planPageHtml + detailPages;
     $("reportModal").hidden = false;
   }
 
@@ -2372,6 +2810,7 @@
       var proj = targetProjs[i];
       var els = elementsOf(proj.id);
       allPages.push(await renderSummaryPageCanvas(proj, els));
+      if (proj.planBlob) allPages.push(await renderAnnotatedFloorPlanCanvas(proj, els));
       for (var j = 0; j < els.length; j++) {
         var elPages = await renderElementPagesCanvas(proj, els[j], j + 1);
         allPages = allPages.concat(elPages);
@@ -2451,6 +2890,8 @@
         '<tr><td style="width:50%;"><strong>Reported by SE:</strong><br><br>Signature: _______________________<br><br>Name: ' + xmlEsc(proj.seName || "_______________________") + '<br>Date: ' + xmlEsc(fmtDateDisplay(proj.inspectionDate)) + '</td>' +
         '<td style="width:50%;"><strong>Endorsed by SSE:</strong><br><br>Signature: _______________________<br><br>Name: ' + xmlEsc(proj.sseName || "_______________________") + '<br>Date: _______________________</td></tr>' +
         '</table></div>');
+      var planHtml = buildFloorPlanReportPageHtml(proj, els);
+      if (planHtml) pages.push(planHtml);
       els.forEach(function (el, i) { pages.push(buildElementReportPageHtml(proj, el, "Element #" + (i + 1), false)); });
     });
     if (!pages.length) { toast(t("exportEmpty")); return false; }
@@ -2846,6 +3287,41 @@
       updateElemGpsText();
     });
     $("btnPickMapLoc").addEventListener("click", openMapPicker);
+    if ($("btnUploadFloorPlan")) $("btnUploadFloorPlan").addEventListener("click", function () { $("fileFloorPlan").value = ""; $("fileFloorPlan").click(); });
+    if ($("fileFloorPlan")) $("fileFloorPlan").addEventListener("change", function (e) { if (e.target.files && e.target.files[0]) handleFloorPlanUpload(e.target.files[0]); });
+    if ($("btnOpenFloorPlan")) $("btnOpenFloorPlan").addEventListener("click", function () { openFloorPlanModal("inspect"); });
+    if ($("btnRemoveFloorPlan")) $("btnRemoveFloorPlan").addEventListener("click", async function () {
+      var proj = getProject(state.currentProjectId);
+      if (!proj || !(await showConfirm(t("confirmRemovePlan")))) return;
+      proj.planBlob = null; proj.planWidth = 0; proj.planHeight = 0; proj.planName = "";
+      await putItem("projects", proj);
+      await reloadData();
+      updateProjectPlanBar(getProject(proj.id));
+      toast(t("deleted"));
+    });
+    if ($("btnPickPlanLoc")) $("btnPickPlanLoc").addEventListener("click", function () { openFloorPlanModal("pick"); });
+    if ($("btnClearPlanLoc")) $("btnClearPlanLoc").addEventListener("click", function () { state.currentPlanPos = null; updateElemPlanPosText(); });
+    if ($("btnCloseFloorPlan")) $("btnCloseFloorPlan").addEventListener("click", closeFloorPlanModal);
+    if ($("btnPlanCancel")) $("btnPlanCancel").addEventListener("click", closeFloorPlanModal);
+    if ($("btnPlanCreateA")) $("btnPlanCreateA").addEventListener("click", function () {
+      if (!hasPlanPos(state.planTempPos)) { toast(t("planNeedTap")); return; }
+      var pos = Object.assign({}, state.planTempPos);
+      closeFloorPlanModal();
+      startNewElement("A", pos);
+    });
+    if ($("btnPlanCreateB")) $("btnPlanCreateB").addEventListener("click", function () {
+      if (!hasPlanPos(state.planTempPos)) { toast(t("planNeedTap")); return; }
+      var pos = Object.assign({}, state.planTempPos);
+      closeFloorPlanModal();
+      startNewElement("B", pos);
+    });
+    if ($("btnPlanApplyPick")) $("btnPlanApplyPick").addEventListener("click", function () {
+      if (!hasPlanPos(state.planTempPos)) { toast(t("planNeedTap")); return; }
+      state.currentPlanPos = Object.assign({}, state.planTempPos);
+      updateElemPlanPosText();
+      closeFloorPlanModal();
+      toast(t("planPinBadge"));
+    });
     $("btnPickerCancel").addEventListener("click", function () { $("pickerModal").hidden = true; });
     $("btnPickerApply").addEventListener("click", function () {
       if (state.pickerLatLng) {
